@@ -25,7 +25,7 @@ export class Renderer {
         
         // Create scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(COLORS.SKY_BLUE);
+        this.scene.background = new THREE.Color(COLORS.SKY_BLUE); // Light blue sky
         
         // Create camera
         this.camera = new THREE.PerspectiveCamera(

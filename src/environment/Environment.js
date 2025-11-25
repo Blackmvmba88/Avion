@@ -266,13 +266,6 @@ export class Environment {
     }
 
     /**
-     * Create runway (deprecated - now handled by Airport class)
-     */
-    createRunway() {
-        // Legacy method - functionality moved to Airport class
-    }
-
-    /**
      * Create simple tree representations
      */
     createTrees() {

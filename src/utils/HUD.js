@@ -202,7 +202,6 @@ export class HUD {
         
         // Bottom panel - Throttle and attitude
         const throttlePercent = Math.round(this.data.throttle * 100);
-        const throttleBar = this.createBar(throttlePercent, 100);
         
         this.bottomPanel.innerHTML = `
             <div style="margin-bottom: 10px;">
