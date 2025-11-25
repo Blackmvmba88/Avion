@@ -11,6 +11,10 @@ export class InputHandler {
       yaw: 0, // -1 to 1
     };
 
+    // Bind event handlers to preserve reference for cleanup
+    this.boundOnKeyDown = (e) => this.onKeyDown(e);
+    this.boundOnKeyUp = (e) => this.onKeyUp(e);
+
     this.setupEventListeners();
   }
 
@@ -18,8 +22,8 @@ export class InputHandler {
    * Setup keyboard event listeners
    */
   setupEventListeners() {
-    document.addEventListener('keydown', (e) => this.onKeyDown(e));
-    document.addEventListener('keyup', (e) => this.onKeyUp(e));
+    document.addEventListener('keydown', this.boundOnKeyDown);
+    document.addEventListener('keyup', this.boundOnKeyUp);
   }
 
   /**
@@ -99,8 +103,8 @@ export class InputHandler {
    * Dispose of event listeners
    */
   dispose() {
-    document.removeEventListener('keydown', this.onKeyDown);
-    document.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('keydown', this.boundOnKeyDown);
+    document.removeEventListener('keyup', this.boundOnKeyUp);
   }
 }
 
