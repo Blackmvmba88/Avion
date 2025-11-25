@@ -1,0 +1,28 @@
+{
+  "name": "avion",
+  "version": "1.0.0",
+  "description": "A modular 3D flight simulator built with Three.js featuring realistic flight physics",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "flight-simulator",
+    "threejs",
+    "3d",
+    "physics",
+    "aviation",
+    "game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4"
+  }
+}
