@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three';
+import { COLORS } from '../utils/constants.js';
 
 /**
  * Renderer class
@@ -23,7 +24,7 @@ export class Renderer {
         
         // Create scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x87ceeb); // Sky blue
+        this.scene.background = new THREE.Color(COLORS.SKY_BLUE);
         
         // Create camera
         this.camera = new THREE.PerspectiveCamera(
@@ -78,8 +79,8 @@ export class Renderer {
         
         // Hemisphere light for sky/ground color gradient
         const hemisphereLight = new THREE.HemisphereLight(
-            0x87ceeb,  // Sky color
-            0x556b2f,  // Ground color
+            COLORS.SKY_BLUE,      // Sky color
+            COLORS.GROUND_GREEN,  // Ground color
             0.6
         );
         this.scene.add(hemisphereLight);

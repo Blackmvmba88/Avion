@@ -222,19 +222,6 @@ export class HUD {
     }
 
     /**
-     * Create a text-based progress bar
-     * @param {number} value - Current value
-     * @param {number} max - Maximum value
-     * @returns {string} Text bar
-     */
-    createBar(value, max) {
-        const barLength = 20;
-        const filled = Math.round((value / max) * barLength);
-        const empty = barLength - filled;
-        return '█'.repeat(filled) + '░'.repeat(empty);
-    }
-
-    /**
      * Show the HUD
      */
     show() {

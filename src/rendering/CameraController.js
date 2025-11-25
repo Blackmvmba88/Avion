@@ -47,6 +47,9 @@ export class CameraController {
         this.positionSmoothing = config.positionSmoothing || 0.05;
         this.lookAtSmoothing = config.lookAtSmoothing || 0.1;
         
+        // Look-ahead distance (how far ahead of target to look)
+        this.lookAheadDistance = config.lookAheadDistance || 5;
+        
         // Current mode
         this.mode = CAMERA_MODES.CHASE;
         
@@ -202,7 +205,7 @@ export class CameraController {
         this.camera.position.copy(this.currentPosition);
         
         // Calculate look-at point (slightly ahead of aircraft)
-        const lookAhead = new THREE.Vector3(0, 0, -5);
+        const lookAhead = new THREE.Vector3(0, 0, -this.lookAheadDistance);
         lookAhead.applyQuaternion(this.target.quaternion);
         const targetLookAt = this.target.position.clone().add(lookAhead);
         

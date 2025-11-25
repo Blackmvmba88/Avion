@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three';
+import { COLORS, ENVIRONMENT } from '../utils/constants.js';
 
 /**
  * Environment class
@@ -21,8 +22,8 @@ export class Environment {
         this.objects = [];
         
         // Configuration
-        this.groundSize = config.groundSize || 20000;
-        this.gridDivisions = config.gridDivisions || 200;
+        this.groundSize = config.groundSize || ENVIRONMENT.GROUND_SIZE;
+        this.gridDivisions = config.gridDivisions || ENVIRONMENT.GRID_DIVISIONS;
         
         // Create environment components
         this.createGround();
@@ -37,7 +38,7 @@ export class Environment {
         // Main ground plane
         const groundGeometry = new THREE.PlaneGeometry(this.groundSize, this.groundSize);
         const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x3d5c3d,  // Dark green (grass)
+            color: COLORS.GROUND_GREEN,
             roughness: 0.9,
             metalness: 0.0,
             side: THREE.DoubleSide
@@ -130,7 +131,7 @@ export class Environment {
         
         const runwayGeometry = new THREE.PlaneGeometry(runwayWidth, runwayLength);
         const runwayMaterial = new THREE.MeshStandardMaterial({
-            color: 0x333333,
+            color: COLORS.RUNWAY_GRAY,
             roughness: 0.8
         });
         
@@ -143,7 +144,7 @@ export class Environment {
         
         // Runway markings
         const markerMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: COLORS.MARKER_WHITE,
             roughness: 0.9
         });
         
@@ -186,7 +187,7 @@ export class Environment {
      */
     createReferenceBuildings() {
         const buildingMaterial = new THREE.MeshStandardMaterial({
-            color: 0x888888,
+            color: COLORS.BUILDING_GRAY,
             roughness: 0.7
         });
         
@@ -202,7 +203,7 @@ export class Environment {
         // Tower top (glass)
         const towerTopGeometry = new THREE.BoxGeometry(20, 10, 20);
         const glassMaterial = new THREE.MeshStandardMaterial({
-            color: 0x87ceeb,
+            color: COLORS.SKY_BLUE,
             metalness: 0.9,
             roughness: 0.1,
             transparent: true,
@@ -236,12 +237,12 @@ export class Environment {
      */
     createTrees() {
         const trunkMaterial = new THREE.MeshStandardMaterial({
-            color: 0x8B4513,
+            color: COLORS.TREE_TRUNK,
             roughness: 0.9
         });
         
         const foliageMaterial = new THREE.MeshStandardMaterial({
-            color: 0x228B22,
+            color: COLORS.TREE_FOLIAGE,
             roughness: 0.8
         });
         

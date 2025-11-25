@@ -9,12 +9,13 @@ import * as THREE from 'three';
 /**
  * Physical constants for flight simulation
  */
-const CONSTANTS = {
+const CONSTANTS = Object.freeze({
     GRAVITY: 9.81,              // m/s² - Earth's gravitational acceleration
     SEA_LEVEL_DENSITY: 1.225,   // kg/m³ - Air density at sea level
     SCALE_HEIGHT: 8500,         // m - Atmospheric scale height
-    MAX_ANGLE_OF_ATTACK: 25     // degrees - Maximum effective angle of attack
-};
+    MAX_ANGLE_OF_ATTACK: 25,    // degrees - Maximum effective angle of attack
+    LIFT_CURVE_SLOPE: 5.7       // Lift curve slope (approximately 2π ≈ 6.28, using 5.7 for realistic wing)
+});
 
 /**
  * FlightPhysics class
@@ -106,8 +107,8 @@ export class FlightPhysics {
         
         // Linear lift increase until stall angle
         if (Math.abs(aoaDegrees) < stallAngle) {
-            // Approximate lift slope of 2π per radian (thin airfoil theory)
-            return this.baseLiftCoefficient * angleOfAttack * 2 * Math.PI / Math.PI;
+            // Lift curve slope (CL per radian) - typically around 5.7 for finite wings
+            return this.baseLiftCoefficient * angleOfAttack * CONSTANTS.LIFT_CURVE_SLOPE;
         } else {
             // Post-stall behavior - lift drops off
             const stallFactor = Math.exp(-(Math.abs(aoaDegrees) - stallAngle) / 10);

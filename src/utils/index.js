@@ -4,3 +4,4 @@
  */
 
 export { HUD } from './HUD.js';
+export { COLORS, ENVIRONMENT } from './constants.js';
