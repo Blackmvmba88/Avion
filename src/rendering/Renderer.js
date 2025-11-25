@@ -18,13 +18,14 @@ export class Renderer {
      * @param {HTMLElement} config.container - DOM element to render into
      * @param {boolean} config.antialias - Enable antialiasing
      * @param {boolean} config.shadows - Enable shadows
+     * @param {boolean} config.defaultLighting - Enable default lighting (disable if using custom lighting)
      */
     constructor(config = {}) {
         this.container = config.container || document.body;
         
         // Create scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(COLORS.SKY_BLUE);
+        this.scene.background = new THREE.Color(COLORS.SKY_BLUE); // Light blue sky
         
         // Create camera
         this.camera = new THREE.PerspectiveCamera(
@@ -56,8 +57,10 @@ export class Renderer {
         // Add canvas to container
         this.container.appendChild(this.renderer.domElement);
         
-        // Setup default lighting
-        this.setupLighting();
+        // Setup default lighting (skip if custom lighting will be used)
+        if (config.defaultLighting !== false) {
+            this.setupLighting();
+        }
         
         // Handle window resize
         this.handleResize = this.handleResize.bind(this);

@@ -6,6 +6,11 @@
 
 import * as THREE from 'three';
 import { COLORS, ENVIRONMENT } from '../utils/constants.js';
+import { TerrainGenerator } from './TerrainGenerator.js';
+import { Airport } from './Airport.js';
+import { WaterBody } from './WaterBody.js';
+import { TimeOfDay } from './TimeOfDay.js';
+import { Weather } from './Weather.js';
 
 /**
  * Environment class
@@ -24,15 +29,81 @@ export class Environment {
         // Configuration
         this.groundSize = config.groundSize || ENVIRONMENT.GROUND_SIZE;
         this.gridDivisions = config.gridDivisions || ENVIRONMENT.GRID_DIVISIONS;
+        this.useTerrain = config.useTerrain !== false; // Default to true
+        this.useWater = config.useWater !== false; // Default to true
+        this.enableDayNightCycle = config.enableDayNightCycle !== false; // Default to true
+        this.enableWeather = config.enableWeather !== false; // Default to true
+        
+        // Systems
+        this.terrain = null;
+        this.airports = [];
+        this.waterBodies = [];
+        this.timeOfDay = null;
+        this.weather = null;
         
         // Create environment components
-        this.createGround();
+        if (this.useTerrain) {
+            this.createTerrain();
+        } else {
+            this.createGround();
+        }
+        
         this.createSkybox();
+        
+        // Create water
+        if (this.useWater) {
+            this.createWater();
+        }
+        
+        // Create airports
+        this.createAirports();
+        
+        // Create reference objects
         this.createReferenceObjects();
+        
+        // Initialize time of day system
+        if (this.enableDayNightCycle) {
+            this.initTimeOfDay(config.timeOfDay);
+        }
+        
+        // Initialize weather system
+        if (this.enableWeather) {
+            this.initWeather(config.weather);
+        }
     }
 
     /**
-     * Create the ground plane with grid pattern
+     * Create terrain with heightmap
+     */
+    createTerrain() {
+        const terrainGenerator = new TerrainGenerator({
+            width: this.groundSize,
+            depth: this.groundSize,
+            segments: 128,
+            maxHeight: 300,
+            seed: Math.random() * 1000
+        });
+        
+        this.terrain = terrainGenerator.generate();
+        this.scene.add(this.terrain);
+        this.objects.push(this.terrain);
+        
+        // Add grid overlay for reference
+        const gridHelper = new THREE.GridHelper(
+            this.groundSize,
+            this.gridDivisions,
+            0x444444,
+            0x555555
+        );
+        gridHelper.position.y = 1;
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        this.scene.add(gridHelper);
+        this.objects.push(gridHelper);
+    }
+
+    /**
+     * Create the ground plane with grid pattern (legacy, used when terrain is disabled)
      */
     createGround() {
         // Main ground plane
@@ -63,6 +134,85 @@ export class Environment {
         gridHelper.material.transparent = true;
         this.scene.add(gridHelper);
         this.objects.push(gridHelper);
+    }
+
+    /**
+     * Create water bodies
+     */
+    createWater() {
+        // Ocean/sea around the terrain
+        const ocean = new WaterBody(this.scene, {
+            size: { width: this.groundSize * 1.5, depth: this.groundSize * 1.5 },
+            position: new THREE.Vector3(0, -5, 0),
+            type: 'ocean'
+        });
+        ocean.create();
+        this.waterBodies.push(ocean);
+        
+        // Optional: Add a lake
+        const lake = new WaterBody(this.scene, {
+            size: { width: 800, depth: 600 },
+            position: new THREE.Vector3(-2000, 0.5, 2000),
+            type: 'lake'
+        });
+        lake.create();
+        this.waterBodies.push(lake);
+    }
+
+    /**
+     * Create multiple airports with runways
+     */
+    createAirports() {
+        // Main airport at origin
+        const mainAirport = new Airport(this.scene, {
+            position: new THREE.Vector3(0, 0, 0),
+            runwayLength: 2000,
+            runwayWidth: 60,
+            name: 'Main International',
+            heading: 0
+        });
+        mainAirport.build();
+        this.airports.push(mainAirport);
+        
+        // Secondary airport
+        const secondaryAirport = new Airport(this.scene, {
+            position: new THREE.Vector3(5000, 0, 3000),
+            runwayLength: 1500,
+            runwayWidth: 45,
+            name: 'Regional Airport',
+            heading: 45
+        });
+        secondaryAirport.build();
+        this.airports.push(secondaryAirport);
+    }
+
+    /**
+     * Initialize time of day system
+     * @param {Object} config - Time of day configuration
+     */
+    initTimeOfDay(config = {}) {
+        this.timeOfDay = new TimeOfDay(this.scene, {
+            startTime: config.startTime || 12,
+            timeSpeed: config.timeSpeed || 100, // 100x real-time for visible cycle
+            cycleDuration: config.cycleDuration || 24
+        });
+    }
+
+    /**
+     * Initialize weather system
+     * @param {Object} config - Weather configuration
+     */
+    initWeather(config = {}) {
+        this.weather = new Weather(this.scene, {
+            cloudDensity: config.cloudDensity || 0.5,
+            rainIntensity: config.rainIntensity || 0,
+            windSpeed: config.windSpeed || 1
+        });
+        
+        this.weather.createClouds();
+        if (config.rainIntensity > 0) {
+            this.weather.createRain();
+        }
     }
 
     /**
@@ -111,125 +261,8 @@ export class Environment {
      * Create reference objects for spatial orientation
      */
     createReferenceObjects() {
-        // Runway
-        this.createRunway();
-        
-        // Reference buildings/structures
-        this.createReferenceBuildings();
-        
         // Trees (simple representation)
         this.createTrees();
-    }
-
-    /**
-     * Create a runway
-     */
-    createRunway() {
-        // Main runway surface
-        const runwayLength = 2000;
-        const runwayWidth = 60;
-        
-        const runwayGeometry = new THREE.PlaneGeometry(runwayWidth, runwayLength);
-        const runwayMaterial = new THREE.MeshStandardMaterial({
-            color: COLORS.RUNWAY_GRAY,
-            roughness: 0.8
-        });
-        
-        this.runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
-        this.runway.rotation.x = -Math.PI / 2;
-        this.runway.position.set(0, 0.2, 0);
-        this.runway.receiveShadow = true;
-        this.scene.add(this.runway);
-        this.objects.push(this.runway);
-        
-        // Runway markings
-        const markerMaterial = new THREE.MeshStandardMaterial({
-            color: COLORS.MARKER_WHITE,
-            roughness: 0.9
-        });
-        
-        // Center line markers
-        const markerCount = 30;
-        const markerSpacing = runwayLength / markerCount;
-        
-        for (let i = 0; i < markerCount; i++) {
-            const markerGeometry = new THREE.PlaneGeometry(1, 15);
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.rotation.x = -Math.PI / 2;
-            marker.position.set(
-                0,
-                0.3,
-                -runwayLength / 2 + markerSpacing * i + markerSpacing / 2
-            );
-            this.scene.add(marker);
-            this.objects.push(marker);
-        }
-        
-        // Threshold markings
-        for (let side = -1; side <= 1; side += 2) {
-            for (let j = 0; j < 4; j++) {
-                const thresholdGeometry = new THREE.PlaneGeometry(3, 30);
-                const threshold = new THREE.Mesh(thresholdGeometry, markerMaterial);
-                threshold.rotation.x = -Math.PI / 2;
-                threshold.position.set(
-                    side * (12 + j * 6),
-                    0.3,
-                    side * (runwayLength / 2 - 25)
-                );
-                this.scene.add(threshold);
-                this.objects.push(threshold);
-            }
-        }
-    }
-
-    /**
-     * Create reference buildings
-     */
-    createReferenceBuildings() {
-        const buildingMaterial = new THREE.MeshStandardMaterial({
-            color: COLORS.BUILDING_GRAY,
-            roughness: 0.7
-        });
-        
-        // Control tower
-        const towerGeometry = new THREE.BoxGeometry(15, 40, 15);
-        const tower = new THREE.Mesh(towerGeometry, buildingMaterial);
-        tower.position.set(200, 20, 500);
-        tower.castShadow = true;
-        tower.receiveShadow = true;
-        this.scene.add(tower);
-        this.objects.push(tower);
-        
-        // Tower top (glass)
-        const towerTopGeometry = new THREE.BoxGeometry(20, 10, 20);
-        const glassMaterial = new THREE.MeshStandardMaterial({
-            color: COLORS.SKY_BLUE,
-            metalness: 0.9,
-            roughness: 0.1,
-            transparent: true,
-            opacity: 0.6
-        });
-        const towerTop = new THREE.Mesh(towerTopGeometry, glassMaterial);
-        towerTop.position.set(200, 45, 500);
-        this.scene.add(towerTop);
-        this.objects.push(towerTop);
-        
-        // Hangars
-        const hangarGeometry = new THREE.BoxGeometry(80, 25, 100);
-        const hangarPositions = [
-            { x: 300, z: -200 },
-            { x: 300, z: 100 },
-            { x: -300, z: -100 }
-        ];
-        
-        hangarPositions.forEach((pos) => {
-            const hangar = new THREE.Mesh(hangarGeometry, buildingMaterial);
-            hangar.position.set(pos.x, 12.5, pos.z);
-            hangar.castShadow = true;
-            hangar.receiveShadow = true;
-            this.scene.add(hangar);
-            this.objects.push(hangar);
-        });
     }
 
     /**
@@ -295,9 +328,30 @@ export class Environment {
     /**
      * Update environment (for future animated elements)
      * @param {number} deltaTime - Time step
+     * @param {THREE.Vector3} cameraPosition - Camera position for effects
      */
-    update(deltaTime) {
-        // Future: animate clouds, wind effects, time of day, etc.
+    update(deltaTime, cameraPosition) {
+        // Update time of day
+        if (this.timeOfDay) {
+            this.timeOfDay.update(deltaTime);
+            
+            // Update sky colors based on time
+            if (this.sky && this.sky.material.uniforms) {
+                const colors = this.timeOfDay.getSkyColors();
+                this.sky.material.uniforms.topColor.value.copy(colors.topColor);
+                this.sky.material.uniforms.bottomColor.value.copy(colors.bottomColor);
+            }
+        }
+        
+        // Update water animation
+        if (this.waterBodies) {
+            this.waterBodies.forEach(water => water.update(deltaTime));
+        }
+        
+        // Update weather
+        if (this.weather) {
+            this.weather.update(deltaTime, cameraPosition);
+        }
     }
 
     /**
@@ -305,23 +359,34 @@ export class Environment {
      * @param {number} hour - Hour of day (0-24)
      */
     setTimeOfDay(hour) {
-        if (!this.sky) return;
-        
-        // Simple day/night color interpolation
-        const uniforms = this.sky.material.uniforms;
-        
-        if (hour >= 6 && hour < 18) {
-            // Daytime
-            uniforms.topColor.value.setHex(0x0077ff);
-            uniforms.bottomColor.value.setHex(0xffffff);
-        } else if (hour >= 18 && hour < 20) {
-            // Sunset
-            uniforms.topColor.value.setHex(0xff6600);
-            uniforms.bottomColor.value.setHex(0xff9966);
-        } else {
-            // Night
-            uniforms.topColor.value.setHex(0x000033);
-            uniforms.bottomColor.value.setHex(0x000066);
+        if (this.timeOfDay) {
+            this.timeOfDay.setTime(hour);
+        }
+    }
+
+    /**
+     * Get current time of day
+     * @returns {number|null} Current hour (0-24) or null if not enabled
+     */
+    getTimeOfDay() {
+        return this.timeOfDay ? this.timeOfDay.getTime() : null;
+    }
+
+    /**
+     * Get time string
+     * @returns {string|null} Time in HH:MM format or null if not enabled
+     */
+    getTimeString() {
+        return this.timeOfDay ? this.timeOfDay.getTimeString() : null;
+    }
+
+    /**
+     * Set weather conditions
+     * @param {Object} conditions - Weather conditions
+     */
+    setWeather(conditions) {
+        if (this.weather) {
+            this.weather.setConditions(conditions);
         }
     }
 
@@ -329,6 +394,7 @@ export class Environment {
      * Dispose of all environment objects
      */
     dispose() {
+        // Dispose standard objects
         this.objects.forEach(obj => {
             if (obj.geometry) obj.geometry.dispose();
             if (obj.material) {
@@ -341,5 +407,29 @@ export class Environment {
             this.scene.remove(obj);
         });
         this.objects = [];
+        
+        // Dispose airports
+        if (this.airports) {
+            this.airports.forEach(airport => airport.dispose());
+            this.airports = [];
+        }
+        
+        // Dispose water bodies
+        if (this.waterBodies) {
+            this.waterBodies.forEach(water => water.dispose());
+            this.waterBodies = [];
+        }
+        
+        // Dispose time of day
+        if (this.timeOfDay) {
+            this.timeOfDay.dispose();
+            this.timeOfDay = null;
+        }
+        
+        // Dispose weather
+        if (this.weather) {
+            this.weather.dispose();
+            this.weather = null;
+        }
     }
 }

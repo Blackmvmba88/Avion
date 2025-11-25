@@ -137,8 +137,12 @@ Aircraft model and behavior:
 
 #### Environment Module (`/environment`)
 World building:
-- **Environment**: Ground, sky, runway, buildings, trees
-- Extensible for terrain systems
+- **Environment**: Manages all environmental systems
+- **TerrainGenerator**: Procedural terrain with heightmaps using Perlin noise
+- **Airport**: Modular airport generation with runways, taxiways, and buildings
+- **WaterBody**: Animated water surfaces with shader effects
+- **TimeOfDay**: Dynamic day/night cycle with sun/moon positioning
+- **Weather**: Cloud generation and rain particle effects
 
 #### Utils Module (`/utils`)
 Utility classes:
@@ -185,12 +189,12 @@ Where:
 - [x] Input handling
 - [x] Basic HUD
 
-### Phase 2: Enhanced Environment (Planned)
-- [ ] Terrain system with heightmaps
-- [ ] Multiple airports/runways
-- [ ] Water bodies
-- [ ] Day/night cycle
-- [ ] Basic weather (clouds, rain)
+### Phase 2: Enhanced Environment ✅
+- [x] Terrain system with heightmaps
+- [x] Multiple airports/runways
+- [x] Water bodies
+- [x] Day/night cycle
+- [x] Basic weather (clouds, rain)
 
 ### Phase 3: Advanced Physics (Planned)
 - [ ] More accurate flight model
@@ -251,10 +255,49 @@ const fighterJet = new Aircraft({
 
 **Custom Environment Objects:**
 ```javascript
-// In Environment.js, add new methods like:
-createMountains() {
-    // Add mountain geometry
-}
+import { Environment } from './environment/Environment.js';
+
+// Create environment with custom configuration
+const environment = new Environment(scene, {
+    useTerrain: true,
+    useWater: true,
+    enableDayNightCycle: true,
+    enableWeather: true,
+    timeOfDay: {
+        startTime: 6,      // Start at 6 AM
+        timeSpeed: 100,    // 100x real-time
+        cycleDuration: 24  // 24 minutes for full cycle
+    },
+    weather: {
+        cloudDensity: 0.7, // 0-1
+        rainIntensity: 0.3, // 0-1
+        windSpeed: 2
+    }
+});
+
+// Control time of day
+environment.setTimeOfDay(18); // Set to 6 PM (sunset)
+
+// Change weather
+environment.setWeather({
+    cloudDensity: 0.9,
+    rainIntensity: 0.6,
+    windSpeed: 3
+});
+```
+
+**Adding Custom Airports:**
+```javascript
+import { Airport } from './environment/Airport.js';
+
+const customAirport = new Airport(scene, {
+    position: new THREE.Vector3(1000, 0, 1000),
+    runwayLength: 2500,
+    runwayWidth: 60,
+    name: 'Custom Airport',
+    heading: 90  // Runway heading in degrees
+});
+customAirport.build();
 ```
 
 ### Performance Considerations
