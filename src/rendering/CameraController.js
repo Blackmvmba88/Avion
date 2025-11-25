@@ -259,4 +259,12 @@ export class CameraController {
             this.lookAtSmoothing = settings.lookAt;
         }
     }
+
+    /**
+     * Get current camera position
+     * @returns {THREE.Vector3} Camera position
+     */
+    getPosition() {
+        return this.camera.position.clone();
+    }
 }

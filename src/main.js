@@ -60,7 +60,8 @@ class FlightSimulator {
             this.renderer = new Renderer({
                 container: document.body,
                 antialias: true,
-                shadows: true
+                shadows: true,
+                defaultLighting: false // TimeOfDay system will handle lighting
             });
             this.renderer.addFog({ near: 500, far: 8000 });
             
@@ -230,8 +231,11 @@ class FlightSimulator {
         // Update aircraft physics and get debug info
         this.debugInfo = this.aircraft.update(dt);
         
-        // Update environment (future: wind, etc.)
-        this.environment.update(dt);
+        // Update environment with camera position for effects
+        const cameraPosition = this.cameraController ? 
+            this.cameraController.getPosition() : 
+            new THREE.Vector3();
+        this.environment.update(dt, cameraPosition);
     }
 
     /**
