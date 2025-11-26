@@ -1,371 +1,220 @@
-/**
- * main.js
- * Entry point for the Avion Flight Simulator.
- * Initializes all systems and runs the main game loop.
- */
-
-import * as THREE from 'three';
-import { Renderer } from './rendering/Renderer.js';
-import { CameraController } from './rendering/CameraController.js';
-import { Aircraft } from './aircraft/Aircraft.js';
-import { InputHandler } from './controls/InputHandler.js';
-import { Environment } from './environment/Environment.js';
-import { HUD } from './utils/HUD.js';
+import { FlightDynamics } from './physics/index.js';
+import { SceneRenderer } from './rendering/index.js';
+import { InputHandler } from './controls/index.js';
+import { BasicPlane } from './aircraft/index.js';
+import { Sky, Terrain } from './environment/index.js';
 
 /**
- * FlightSimulator class
- * Main application class that orchestrates all simulator components
+ * FlightSimulator - Main application class that combines all modules
  */
 class FlightSimulator {
-    /**
-     * Create a new FlightSimulator instance
-     */
-    constructor() {
-        // Core systems
-        this.renderer = null;
-        this.cameraController = null;
-        this.aircraft = null;
-        this.inputHandler = null;
-        this.environment = null;
-        this.hud = null;
-        
-        // Game state
-        this.isRunning = false;
-        this.isPaused = false;
-        this.lastTime = 0;
-        this.deltaTime = 0;
-        
-        // Physics timing
-        this.fixedTimeStep = 1 / 60; // 60 Hz physics
-        this.accumulator = 0;
-        this.maxDeltaTime = 0.1; // Cap to prevent spiral of death
-        
-        // Debug info
-        this.debugInfo = {};
-        
-        // Bind methods
-        this.gameLoop = this.gameLoop.bind(this);
-        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
-    }
+  constructor() {
+    this.renderer = null;
+    this.physics = null;
+    this.controls = null;
+    this.aircraft = null;
+    this.sky = null;
+    this.terrain = null;
 
-    /**
-     * Initialize the flight simulator
-     * @returns {Promise} Resolves when initialization is complete
-     */
-    async init() {
-        console.log('🛫 Initializing Avion Flight Simulator...');
-        
-        try {
-            // Initialize renderer
-            this.renderer = new Renderer({
-                container: document.body,
-                antialias: true,
-                shadows: true,
-                defaultLighting: false // TimeOfDay system will handle lighting
-            });
-            this.renderer.addFog({ near: 500, far: 8000 });
-            
-            // Initialize input handler
-            this.inputHandler = new InputHandler();
-            
-            // Initialize environment
-            this.environment = new Environment(this.renderer.getScene());
-            
-            // Initialize aircraft
-            this.aircraft = new Aircraft({
-                name: 'Trainer',
-                physics: {
-                    mass: 1200,
-                    wingArea: 16,
-                    maxThrust: 25000,
-                    dragCoefficient: 0.025,
-                    liftCoefficient: 1.2
-                },
-                visual: {
-                    color: 0x3498db,
-                    scale: 1.5
-                }
-            });
-            
-            // Set initial aircraft position
-            this.aircraft.setPosition(new THREE.Vector3(0, 100, 500));
-            this.aircraft.physics.setVelocity(new THREE.Vector3(0, 0, -50));
-            
-            // Add aircraft to scene
-            this.renderer.add(this.aircraft.getObject3D());
-            
-            // Initialize camera controller
-            this.cameraController = new CameraController(this.renderer.getCamera(), {
-                initialDistance: 30,
-                minDistance: 10,
-                maxDistance: 100
-            });
-            this.cameraController.setTarget(this.aircraft.getObject3D());
-            
-            // Initialize HUD
-            this.hud = new HUD({ container: document.body });
-            
-            // Add event listeners
-            document.addEventListener('visibilitychange', this.handleVisibilityChange);
-            
-            console.log('✅ Initialization complete!');
-            
-            return true;
-        } catch (error) {
-            console.error('❌ Initialization failed:', error);
-            throw error;
-        }
-    }
+    this.lastTime = 0;
+    this.isRunning = false;
 
-    /**
-     * Start the simulation
-     */
-    start() {
-        if (this.isRunning) return;
-        
-        this.isRunning = true;
-        this.isPaused = false;
-        this.lastTime = performance.now();
-        
-        console.log('🎮 Simulation started');
-        requestAnimationFrame(this.gameLoop);
-    }
+    this.init();
+  }
 
-    /**
-     * Stop the simulation
-     */
-    stop() {
-        this.isRunning = false;
-        console.log('⏹️ Simulation stopped');
-    }
+  /**
+   * Initialize all simulator components
+   */
+  init() {
+    // Create UI overlay
+    this.createUI();
 
-    /**
-     * Toggle pause state
-     */
-    togglePause() {
-        this.isPaused = !this.isPaused;
-        console.log(this.isPaused ? '⏸️ Paused' : '▶️ Resumed');
-    }
+    // Initialize rendering
+    this.renderer = new SceneRenderer(document.getElementById('game-container'));
 
-    /**
-     * Handle page visibility changes
-     */
-    handleVisibilityChange() {
-        if (document.hidden) {
-            this.isPaused = true;
-        }
-    }
+    // Initialize physics
+    this.physics = new FlightDynamics();
 
-    /**
-     * Main game loop
-     * @param {number} currentTime - Current timestamp
-     */
-    gameLoop(currentTime) {
-        if (!this.isRunning) return;
-        
-        // Calculate delta time
-        this.deltaTime = Math.min((currentTime - this.lastTime) / 1000, this.maxDeltaTime);
-        this.lastTime = currentTime;
-        
-        // Process input
-        this.processInput();
-        
-        // Update physics with fixed timestep
-        if (!this.isPaused) {
-            this.accumulator += this.deltaTime;
-            
-            while (this.accumulator >= this.fixedTimeStep) {
-                this.updatePhysics(this.fixedTimeStep);
-                this.accumulator -= this.fixedTimeStep;
-            }
-        }
-        
-        // Update camera (uses variable timestep for smooth visuals)
-        this.updateCamera(this.deltaTime);
-        
-        // Update HUD
-        this.updateHUD();
-        
-        // Render
-        this.renderer.render();
-        
-        // Continue loop
-        requestAnimationFrame(this.gameLoop);
-    }
+    // Initialize controls
+    this.controls = new InputHandler();
 
-    /**
-     * Process input and apply to aircraft controls
-     */
-    processInput() {
-        // Update input state
-        this.inputHandler.update(this.deltaTime);
-        
-        // Get control inputs
-        const flightControls = this.inputHandler.getFlightControls();
-        const cameraControls = this.inputHandler.getCameraControls();
-        const actions = this.inputHandler.consumeActions();
-        
-        // Apply flight controls to aircraft
-        this.aircraft.setPitch(flightControls.pitch);
-        this.aircraft.setRoll(flightControls.roll);
-        this.aircraft.setYaw(flightControls.yaw);
-        this.aircraft.setThrottle(flightControls.throttle);
-        
-        // Apply camera controls
-        this.cameraController.applyControls(cameraControls, this.deltaTime);
-        
-        // Handle actions
-        if (actions.resetAircraft) {
-            this.resetAircraft();
-        }
-        if (actions.togglePause) {
-            this.togglePause();
-        }
-    }
+    // Create aircraft
+    this.aircraft = new BasicPlane();
+    this.renderer.add(this.aircraft.getObject3D());
 
-    /**
-     * Update physics simulation
-     * @param {number} dt - Fixed timestep
-     */
-    updatePhysics(dt) {
-        // Update aircraft physics and get debug info
-        this.debugInfo = this.aircraft.update(dt);
-        
-        // Update environment with camera position for effects
-        const cameraPosition = this.cameraController ? 
-            this.cameraController.getPosition() : 
-            new THREE.Vector3();
-        this.environment.update(dt, cameraPosition);
-    }
+    // Create environment
+    this.sky = new Sky();
+    this.renderer.add(this.sky.getObject3D());
 
-    /**
-     * Update camera position
-     * @param {number} dt - Delta time
-     */
-    updateCamera(dt) {
-        this.cameraController.update(dt);
-    }
+    this.terrain = new Terrain();
+    this.renderer.add(this.terrain.getObject3D());
 
-    /**
-     * Update HUD display
-     */
-    updateHUD() {
-        // Calculate heading from aircraft forward direction
-        const forward = this.aircraft.getForwardDirection();
-        const heading = Math.atan2(forward.x, -forward.z) * (180 / Math.PI);
-        
-        // Calculate pitch and roll from aircraft orientation
-        const euler = new THREE.Euler().setFromQuaternion(this.aircraft.getOrientation(), 'YXZ');
-        const pitch = THREE.MathUtils.radToDeg(euler.x);
-        const roll = THREE.MathUtils.radToDeg(euler.z);
-        
-        // Get vertical speed from velocity
-        const velocity = this.aircraft.physics.getVelocity();
-        const verticalSpeed = velocity.y;
-        
-        this.hud.update({
-            altitude: this.aircraft.getAltitude(),
-            airspeed: this.aircraft.getAirspeed(),
-            throttle: this.aircraft.getThrottle(),
-            heading: heading,
-            pitch: pitch,
-            roll: roll,
-            verticalSpeed: verticalSpeed,
-            fps: this.renderer.getFPS()
-        });
-    }
+    // Start the simulation
+    this.start();
+  }
 
-    /**
-     * Reset aircraft to initial position
-     */
-    resetAircraft() {
-        console.log('🔄 Resetting aircraft...');
-        
-        this.aircraft.reset(
-            new THREE.Vector3(0, 100, 500),
-            new THREE.Quaternion()
-        );
-        
-        // Give initial forward velocity
-        this.aircraft.physics.setVelocity(new THREE.Vector3(0, 0, -50));
-        
-        // Reset input
-        this.inputHandler.reset();
-        
-        // Reset camera
-        this.cameraController.resetOrbit();
-    }
+  /**
+   * Create the UI overlay with controls info and HUD
+   */
+  createUI() {
+    // Game container
+    const container = document.createElement('div');
+    container.id = 'game-container';
+    container.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%;';
+    document.body.appendChild(container);
 
-    /**
-     * Cleanup and dispose all resources
-     */
-    dispose() {
-        this.stop();
-        
-        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-        
-        if (this.hud) this.hud.dispose();
-        if (this.inputHandler) this.inputHandler.dispose();
-        if (this.environment) this.environment.dispose();
-        if (this.renderer) this.renderer.dispose();
-        
-        console.log('🧹 Cleanup complete');
-    }
-}
-
-// Application entry point
-let simulator = null;
-
-/**
- * Initialize and start the application
- */
-async function main() {
-    // Create loading indicator
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'loading';
-    loadingDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-family: Arial, sans-serif;
-        font-size: 24px;
-        color: white;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        z-index: 9999;
+    // HUD overlay
+    const hud = document.createElement('div');
+    hud.id = 'hud';
+    hud.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-family: monospace;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 100;
     `;
-    loadingDiv.textContent = '🛫 Loading Avion Flight Simulator...';
-    document.body.appendChild(loadingDiv);
-    
-    try {
-        // Create and initialize simulator
-        simulator = new FlightSimulator();
-        await simulator.init();
-        
-        // Remove loading indicator
-        loadingDiv.remove();
-        
-        // Start simulation
-        simulator.start();
-    } catch (error) {
-        loadingDiv.textContent = '❌ Failed to load: ' + error.message;
-        loadingDiv.style.color = '#ff6666';
-        console.error('Failed to start simulator:', error);
+    hud.innerHTML = `
+      <div id="speed">Speed: 0 m/s</div>
+      <div id="altitude">Altitude: 0 m</div>
+      <div id="throttle">Throttle: 50%</div>
+    `;
+    document.body.appendChild(hud);
+
+    // Controls info
+    const controlsInfo = document.createElement('div');
+    controlsInfo.id = 'controls-info';
+    controlsInfo.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+      font-family: monospace;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 100;
+    `;
+    controlsInfo.innerHTML = `
+      <strong>Controls:</strong><br>
+      W/S or ↑/↓: Pitch<br>
+      A/D or ←/→: Roll<br>
+      Q/E: Yaw<br>
+      Shift: Throttle Up<br>
+      Ctrl: Throttle Down<br>
+      R: Reset
+    `;
+    document.body.appendChild(controlsInfo);
+
+    // Title
+    const title = document.createElement('div');
+    title.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+    `;
+    title.textContent = 'Avion Flight Simulator';
+    document.body.appendChild(title);
+  }
+
+  /**
+   * Update the HUD display
+   * @param {Object} state - Current physics state
+   * @param {Object} controlState - Current control state
+   */
+  updateHUD(state, controlState) {
+    document.getElementById('speed').textContent = `Speed: ${state.speed.toFixed(1)} m/s`;
+    document.getElementById('altitude').textContent = `Altitude: ${state.position.y.toFixed(1)} m`;
+    document.getElementById('throttle').textContent = `Throttle: ${(controlState.throttle * 100).toFixed(0)}%`;
+  }
+
+  /**
+   * Start the simulation loop
+   */
+  start() {
+    this.isRunning = true;
+    this.lastTime = performance.now();
+    this.animate();
+  }
+
+  /**
+   * Stop the simulation
+   */
+  stop() {
+    this.isRunning = false;
+  }
+
+  /**
+   * Main animation loop
+   */
+  animate() {
+    if (!this.isRunning) return;
+
+    requestAnimationFrame(() => this.animate());
+
+    const currentTime = performance.now();
+    const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+    this.lastTime = currentTime;
+
+    // Cap delta time to prevent large jumps
+    const clampedDelta = Math.min(deltaTime, 0.1);
+
+    // Update controls
+    this.controls.update();
+    const controlState = this.controls.getControls();
+
+    // Handle reset
+    if (controlState.reset) {
+      this.physics.reset();
     }
+
+    // Update physics
+    this.physics.update(clampedDelta, controlState, this.aircraft.getConfig());
+    const physicsState = this.physics.getState();
+
+    // Update aircraft model
+    this.aircraft.updateFromState(physicsState);
+
+    // Update sky position
+    this.sky.updatePosition(physicsState.position);
+
+    // Update camera
+    this.renderer.updateCamera(physicsState);
+
+    // Update HUD
+    this.updateHUD(physicsState, controlState);
+
+    // Render scene
+    this.renderer.render();
+  }
+
+  /**
+   * Clean up resources
+   */
+  dispose() {
+    this.stop();
+    this.renderer.dispose();
+    this.aircraft.dispose();
+    this.sky.dispose();
+    this.terrain.dispose();
+    this.controls.dispose();
+  }
 }
 
-// Start when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', main);
-} else {
-    main();
-}
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (simulator) {
-        simulator.dispose();
-    }
+// Initialize the simulator when the page loads
+window.addEventListener('DOMContentLoaded', () => {
+  window.simulator = new FlightSimulator();
 });
 
-export { FlightSimulator };
+export default FlightSimulator;
