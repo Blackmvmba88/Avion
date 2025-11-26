@@ -31,6 +31,39 @@ A modular 3D flight simulator built with Three.js featuring realistic flight phy
   - Heading, pitch, and roll display
   - FPS counter
 
+- **🌐 Internationalization (i18n)**
+  - Support for 5 languages: English, Spanish, French, German, Portuguese
+  - Auto-detect browser language
+  - Easy language switching
+  - Fully translatable UI
+
+- **📱 Multiplatform Support**
+  - Automatic platform detection (Desktop, Mobile, Tablet)
+  - Platform-specific optimizations
+  - Touch control support
+  - Responsive UI adaptation
+  - OS detection (iOS, Android, Windows, macOS, Linux)
+
+- **🔌 Connectivity Infrastructure**
+  - WebSocket support for multiplayer
+  - Automatic reconnection with exponential backoff
+  - Message type system
+  - Connection status monitoring
+  - Heartbeat/ping-pong mechanism
+
+- **🔄 Backward Compatibility**
+  - Version management system
+  - Automatic data migration
+  - Feature flags
+  - Deprecation tracking
+  - Breaking change documentation
+
+- **⚡ Optimization & Validation**
+  - Configuration validation
+  - Performance utilities (throttle, debounce, pooling)
+  - Platform-optimized rendering settings
+  - Memory management helpers
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -147,6 +180,106 @@ World building:
 #### Utils Module (`/utils`)
 Utility classes:
 - **HUD**: On-screen flight information display
+- **I18n**: Internationalization system with 5 languages
+- **PlatformDetector**: Platform and feature detection
+- **Optimizer**: Performance optimization utilities (throttle, debounce, pooling)
+- **Validator**: Configuration and data validation
+- **ConnectionManager**: Network connectivity with auto-reconnection
+- **VersionManager**: Version compatibility and data migration
+- **AppInitializer**: Unified application initialization system
+
+#### Locales Module (`/locales`)
+Translation files:
+- **en**: English translations
+- **es**: Spanish translations
+- **fr**: French translations
+- **de**: German translations
+- **pt**: Portuguese translations
+
+#### Config Module (`/config`)
+Configuration files:
+- **network.config.js**: Network and connectivity settings
+- **compatibility.config.js**: Version compatibility and feature flags
+- **mobile.config.js**: Mobile platform optimizations
+- **engine.config.js**: Core engine configuration
+- **aircraft.config.js**: Aircraft parameters
+- **environment.config.js**: Environment settings
+
+## 🆕 New Features (v1.0)
+
+### Internationalization (i18n)
+The simulator now supports 5 languages with easy switching:
+
+```javascript
+import i18n from './utils/I18n.js';
+
+// Set language
+i18n.setLocale('es'); // Spanish
+
+// Get translated text
+const text = i18n.t('hud.altitude'); // "Altitud"
+```
+
+**Supported Languages:**
+- 🇬🇧 English (en)
+- 🇪🇸 Spanish (es)
+- 🇫🇷 French (fr)
+- 🇩🇪 German (de)
+- 🇵🇹 Portuguese (pt)
+
+### Multiplatform Support
+Automatic detection and optimization for different platforms:
+
+```javascript
+import platformDetector from './utils/PlatformDetector.js';
+
+// Detect platform
+const platform = platformDetector.platform;
+console.log(platform.isMobile); // true/false
+console.log(platform.isIOS);    // true/false
+
+// Get recommended settings
+const settings = platformDetector.getRecommendedSettings();
+```
+
+### Connectivity
+Ready for multiplayer with WebSocket support:
+
+```javascript
+import { ConnectionManager } from './utils/ConnectionManager.js';
+
+const connection = new ConnectionManager();
+await connection.connect('ws://server.com');
+
+// Send/receive messages
+connection.send('player_update', data);
+connection.on('state_sync', (data) => { ... });
+```
+
+### Backward Compatibility
+Version management ensures smooth upgrades:
+
+```javascript
+import versionManager from './utils/VersionManager.js';
+
+// Automatically migrate old save data
+const migrated = await versionManager.migrate(oldData, '0.5.0');
+```
+
+### Performance Optimization
+Built-in utilities for optimal performance:
+
+```javascript
+import { Optimizer } from './utils/Optimizer.js';
+
+// Throttle expensive operations
+const throttled = Optimizer.throttle(updateFn, 100);
+
+// Object pooling
+const pool = Optimizer.createPool(() => new Particle(), 100);
+```
+
+For detailed documentation, see [NEW_FEATURES.md](docs/NEW_FEATURES.md)
 
 ## 📐 Physics Model
 
