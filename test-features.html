@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avion - New Features Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h2 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .info-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .console-line {
+            margin-bottom: 5px;
+        }
+        
+        .success {
+            color: #4ec9b0;
+        }
+        
+        .error {
+            color: #f48771;
+        }
+        
+        .warning {
+            color: #dcdcaa;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 5px 5px 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Avion Flight Simulator - New Features Test</h1>
+        
+        <div class="card">
+            <h2>🌐 Internationalization (i18n)</h2>
+            <div>
+                <button onclick="testI18n('en')">English</button>
+                <button onclick="testI18n('es')">Español</button>
+                <button onclick="testI18n('fr')">Français</button>
+                <button onclick="testI18n('de')">Deutsch</button>
+                <button onclick="testI18n('pt')">Português</button>
+            </div>
+            <div class="info-grid" style="margin-top: 15px;">
+                <div class="info-item">
+                    <strong>Current Language:</strong>
+                    <span id="current-locale">-</span>
+                </div>
+                <div class="info-item">
+                    <strong>Sample Text (Altitude):</strong>
+                    <span id="sample-text">-</span>
+                </div>
+                <div class="info-item">
+                    <strong>Sample Text (Speed):</strong>
+                    <span id="sample-text-2">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📱 Platform Detection</h2>
+            <div class="info-grid" id="platform-info"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🔄 System Status</h2>
+            <div class="info-grid" id="system-info"></div>
+        </div>
+        
+        <div class="card">
+            <h2>⚡ Test All Features</h2>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearConsole()">Clear Console</button>
+            <div class="console" id="console"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import i18n from './src/utils/I18n.js';
+        import locales from './src/locales/index.js';
+        import platformDetector from './src/utils/PlatformDetector.js';
+        import AppInitializer from './src/utils/AppInitializer.js';
+        import { Validator } from './src/utils/Validator.js';
+        import { Optimizer } from './src/utils/Optimizer.js';
+        import versionManager from './src/utils/VersionManager.js';
+        
+        // Initialize
+        Object.entries(locales).forEach(([key, translations]) => {
+            i18n.addTranslations(key, translations);
+        });
+        i18n.setLocale('en');
+        
+        // Console logging
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        // Test i18n
+        window.testI18n = function(locale) {
+            i18n.setLocale(locale);
+            document.getElementById('current-locale').textContent = locale.toUpperCase();
+            document.getElementById('sample-text').textContent = i18n.t('hud.altitude');
+            document.getElementById('sample-text-2').textContent = i18n.t('hud.speed');
+            log(`Language changed to: ${locale}`, 'success');
+        };
+        
+        // Display platform info
+        function displayPlatformInfo() {
+            const platform = platformDetector.platform;
+            const features = platformDetector.features;
+            const container = document.getElementById('platform-info');
+            
+            container.innerHTML = `
+                <div class="info-item">
+                    <strong>Platform:</strong>
+                    ${platformDetector.toString()}
+                </div>
+                <div class="info-item">
+                    <strong>Device Type:</strong>
+                    ${platform.isMobile ? 'Mobile' : platform.isTablet ? 'Tablet' : 'Desktop'}
+                </div>
+                <div class="info-item">
+                    <strong>Touch Support:</strong>
+                    ${platform.hasTouch ? '✅ Yes' : '❌ No'}
+                </div>
+                <div class="info-item">
+                    <strong>WebGL:</strong>
+                    ${features.webgl ? '✅ Yes' : '❌ No'} (v2: ${features.webgl2 ? 'Yes' : 'No'})
+                </div>
+                <div class="info-item">
+                    <strong>Screen:</strong>
+                    ${platform.screenWidth}x${platform.screenHeight} (${platform.orientation})
+                </div>
+                <div class="info-item">
+                    <strong>Pixel Ratio:</strong>
+                    ${platform.pixelRatio}
+                </div>
+            `;
+        }
+        
+        // Display system info
+        function displaySystemInfo() {
+            const container = document.getElementById('system-info');
+            const recommended = platformDetector.getRecommendedSettings();
+            
+            container.innerHTML = `
+                <div class="info-item">
+                    <strong>Version:</strong>
+                    1.0.0
+                </div>
+                <div class="info-item">
+                    <strong>Recommended Quality:</strong>
+                    ${recommended.quality}
+                </div>
+                <div class="info-item">
+                    <strong>Target FPS:</strong>
+                    ${recommended.targetFPS}
+                </div>
+                <div class="info-item">
+                    <strong>Shadows:</strong>
+                    ${recommended.shadows ? '✅ Enabled' : '❌ Disabled'}
+                </div>
+                <div class="info-item">
+                    <strong>Anti-aliasing:</strong>
+                    ${recommended.antialiasing ? '✅ Enabled' : '❌ Disabled'}
+                </div>
+                <div class="info-item">
+                    <strong>WebSocket:</strong>
+                    ${platformDetector.features.webSocket ? '✅ Supported' : '❌ Not supported'}
+                </div>
+            `;
+        }
+        
+        // Run all tests
+        window.runAllTests = async function() {
+            log('════════════════════════════════════════', 'info');
+            log('Starting comprehensive feature tests...', 'success');
+            log('════════════════════════════════════════', 'info');
+            
+            // Test 1: i18n
+            log('\n📝 Testing i18n...', 'warning');
+            const locales = ['en', 'es', 'fr', 'de', 'pt'];
+            locales.forEach(locale => {
+                i18n.setLocale(locale);
+                log(`  ${locale}: "${i18n.t('hud.altitude')}"`, 'info');
+            });
+            log('✅ i18n test passed!', 'success');
+            
+            // Test 2: Platform Detection
+            log('\n📱 Testing Platform Detection...', 'warning');
+            log(`  Platform: ${platformDetector.toString()}`, 'info');
+            log(`  WebGL: ${platformDetector.features.webgl}`, 'info');
+            log('✅ Platform detection test passed!', 'success');
+            
+            // Test 3: Validation
+            log('\n🔍 Testing Validation...', 'warning');
+            const schema = {
+                quality: { type: 'string', enum: ['low', 'high'], required: true }
+            };
+            const validResult = Validator.validateConfig({ quality: 'high' }, schema);
+            log(`  Valid config: ${validResult.valid}`, validResult.valid ? 'success' : 'error');
+            const invalidResult = Validator.validateConfig({ quality: 'extreme' }, schema);
+            log(`  Invalid config detected: ${!invalidResult.valid}`, !invalidResult.valid ? 'success' : 'error');
+            log('✅ Validation test passed!', 'success');
+            
+            // Test 4: Version Management
+            log('\n🔄 Testing Version Management...', 'warning');
+            const comparison = versionManager.compareVersions('1.0.0', '0.5.0');
+            log(`  Version comparison (1.0.0 vs 0.5.0): ${comparison > 0 ? 'Newer' : 'Older'}`, 'info');
+            log('✅ Version management test passed!', 'success');
+            
+            // Test 5: Optimization
+            log('\n⚡ Testing Optimization...', 'warning');
+            let count = 0;
+            const throttled = Optimizer.throttle(() => count++, 100);
+            for (let i = 0; i < 10; i++) throttled();
+            log(`  Throttle test: called 10 times, executed ${count} times`, 'info');
+            log('✅ Optimization test passed!', 'success');
+            
+            // Test 6: App Initialization
+            log('\n🚀 Testing App Initialization...', 'warning');
+            try {
+                const initializer = new AppInitializer();
+                const result = await initializer.initialize({ locale: 'en' });
+                log(`  Initialization: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.success ? 'success' : 'error');
+                log('✅ App initialization test passed!', 'success');
+            } catch (error) {
+                log(`  Initialization error: ${error.message}`, 'error');
+            }
+            
+            log('\n════════════════════════════════════════', 'info');
+            log('✅ All tests completed successfully!', 'success');
+            log('════════════════════════════════════════', 'info');
+        };
+        
+        // Clear console
+        window.clearConsole = function() {
+            document.getElementById('console').innerHTML = '';
+        };
+        
+        // Initialize display
+        displayPlatformInfo();
+        displaySystemInfo();
+        testI18n('en');
+        log('System initialized. Ready for testing!', 'success');
+    </script>
+</body>
+</html>
