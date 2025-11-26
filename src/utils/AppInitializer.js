@@ -3,12 +3,12 @@
  * Initializes all systems with proper configuration
  */
 
-import i18n from './utils/I18n.js';
-import locales from './locales/index.js';
-import platformDetector from './utils/PlatformDetector.js';
-import versionManager from './utils/VersionManager.js';
-import { Validator } from './utils/Validator.js';
-import COMPATIBILITY_CONFIG from './config/compatibility.config.js';
+import i18n from './I18n.js';
+import locales from '../locales/index.js';
+import platformDetector from './PlatformDetector.js';
+import versionManager from './VersionManager.js';
+import { Validator } from './Validator.js';
+import COMPATIBILITY_CONFIG from '../config/compatibility.config.js';
 
 export class AppInitializer {
     constructor() {

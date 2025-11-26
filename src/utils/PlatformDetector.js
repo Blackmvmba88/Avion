@@ -3,6 +3,13 @@
  * Detects the current platform and provides platform-specific utilities
  */
 
+// Constants for screen size thresholds
+const SCREEN_THRESHOLDS = {
+    MOBILE_MAX: 768,
+    TABLET_MIN: 768,
+    TABLET_MAX: 1024
+};
+
 export class PlatformDetector {
     constructor() {
         this.userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -55,7 +62,7 @@ export class PlatformDetector {
      */
     isMobileDevice() {
         return /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(this.userAgent) ||
-               (window.innerWidth <= 768 && 'ontouchstart' in window);
+               (window.innerWidth <= SCREEN_THRESHOLDS.MOBILE_MAX && 'ontouchstart' in window);
     }
     
     /**
@@ -64,7 +71,9 @@ export class PlatformDetector {
      */
     isTabletDevice() {
         return /ipad|android(?!.*mobile)/i.test(this.userAgent) ||
-               (window.innerWidth > 768 && window.innerWidth <= 1024 && 'ontouchstart' in window);
+               (window.innerWidth > SCREEN_THRESHOLDS.TABLET_MIN && 
+                window.innerWidth <= SCREEN_THRESHOLDS.TABLET_MAX && 
+                'ontouchstart' in window);
     }
     
     /**

@@ -9,6 +9,7 @@ export class ConnectionManager {
     constructor(config = {}) {
         this.config = { ...NETWORK_CONFIG.connection, ...config };
         this.socket = null;
+        this.serverUrl = null;
         this.connected = false;
         this.reconnectAttempts = 0;
         this.reconnectTimer = null;
@@ -23,6 +24,7 @@ export class ConnectionManager {
      * @returns {Promise}
      */
     connect(url) {
+        this.serverUrl = url; // Store URL for reconnection
         return new Promise((resolve, reject) => {
             try {
                 this.socket = new WebSocket(url);
@@ -92,7 +94,7 @@ export class ConnectionManager {
         this.notifyConnectionChange('reconnecting', { attempt: this.reconnectAttempts });
         
         this.reconnectTimer = setTimeout(() => {
-            this.connect(this.socket.url).catch(() => {
+            this.connect(this.serverUrl).catch(() => {
                 // Will retry if attempts remain
             });
         }, delay);

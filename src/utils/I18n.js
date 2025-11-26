@@ -97,8 +97,38 @@ export class I18n {
      */
     interpolate(translation, params) {
         return translation.replace(/\{(\w+)\}/g, (match, key) => {
-            return params[key] !== undefined ? params[key] : match;
+            if (params[key] !== undefined) {
+                // Note: Values are not HTML-escaped by default
+                // If rendering to HTML, use escapeHtml() or textContent instead of innerHTML
+                return params[key];
+            }
+            return match;
         });
+    }
+    
+    /**
+     * Escape HTML characters to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string}
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Get translation with HTML-escaped parameters
+     * @param {string} key - Translation key
+     * @param {Object} params - Interpolation parameters (will be HTML-escaped)
+     * @returns {string}
+     */
+    tSafe(key, params = {}) {
+        const escapedParams = {};
+        for (const [k, v] of Object.entries(params)) {
+            escapedParams[k] = this.escapeHtml(String(v));
+        }
+        return this.t(key, escapedParams);
     }
     
     /**
