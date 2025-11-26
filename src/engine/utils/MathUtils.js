@@ -65,7 +65,7 @@ export class MathUtils {
      * @param {number} outMax - Output range maximum
      * @returns {number} Mapped value
      */
-    static map(value, inMin, inMax, inMin, outMax) {
+    static map(value, inMin, inMax, outMin, outMax) {
         return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     }
     

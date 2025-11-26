@@ -1,5 +1,7 @@
-# Logger Utility
-# Provides logging functionality for the engine
+/**
+ * Logger Utility
+ * Provides logging functionality for the engine
+ */
 
 export class Logger {
     static levels = {
