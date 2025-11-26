@@ -1,0 +1,24 @@
+# Code Owners
+# These users will be automatically requested for review when someone opens a PR
+
+# Global owners
+* @Blackmvmba88
+
+# Documentation
+/docs/ @Blackmvmba88
+
+# Core engine
+/src/engine/core/ @Blackmvmba88
+
+# Physics system
+/src/engine/physics/ @Blackmvmba88
+
+# Rendering system
+/src/engine/rendering/ @Blackmvmba88
+
+# Configuration files
+*.config.js @Blackmvmba88
+package.json @Blackmvmba88
+
+# CI/CD
+/.github/ @Blackmvmba88
