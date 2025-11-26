@@ -1,35 +1,38 @@
-# Avion - Flight Simulator
+# Avion
 
-A modular 3D flight simulator built with Three.js featuring realistic flight physics, intuitive controls, and a scalable architecture ready for future expansion.
+A basic flight simulator with modular architecture built using Three.js.
 
-![Flight Simulator](https://img.shields.io/badge/Status-Active%20Development-green)
-![License](https://img.shields.io/badge/License-MIT-blue)
-![Three.js](https://img.shields.io/badge/Three.js-v0.160-orange)
+## Features
 
-## 🎮 Features
+- 3D aircraft with realistic flight physics
+- Sky dome with gradient shader
+- Terrain with trees and grid
+- Keyboard controls for flight
+- HUD with speed, altitude, and throttle display
+- Follow camera system
 
-- **Realistic Flight Physics**
-  - Lift, drag, and thrust calculations
-  - Air density variations with altitude
-  - Angle of attack modeling with stall behavior
-  - Gravity and ground collision detection
+## Project Structure
 
-- **3D Graphics**
-  - Stylized aircraft model
-  - Environment with runway, buildings, and trees
-  - Dynamic sky with gradient shader
-  - Shadow mapping and fog effects
-
-- **Camera System**
-  - Smooth chase camera with lag
-  - User-controlled orbit and zoom
-  - Multiple view modes (chase, orbit)
-
-- **HUD Display**
-  - Altitude and airspeed indicators
-  - Throttle gauge
-  - Heading, pitch, and roll display
-  - FPS counter
+```
+src/
+├── physics/          # Flight dynamics and physics calculations
+│   ├── FlightDynamics.js
+│   └── index.js
+├── rendering/        # Three.js scene and rendering
+│   ├── SceneRenderer.js
+│   └── index.js
+├── controls/         # User input handling
+│   ├── InputHandler.js
+│   └── index.js
+├── aircraft/         # Aircraft models
+│   ├── BasicPlane.js
+│   └── index.js
+├── environment/      # Environment elements (sky, terrain)
+│   ├── Sky.js
+│   ├── Terrain.js
+│   └── index.js
+└── main.js          # Main entry point
+```
 
 - **🌐 Internationalization (i18n)**
   - Support for 5 languages: English, Spanish, French, German, Portuguese
@@ -74,20 +77,10 @@ A modular 3D flight simulator built with Three.js featuring realistic flight phy
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/avion.git
-cd avion
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
 ```
 
-Open your browser at `http://localhost:5173` to start flying!
-
-### Build for Production
+### Development
 
 ```bash
 npm run build
@@ -386,75 +379,33 @@ const fighterJet = new Aircraft({
 });
 ```
 
-**Custom Environment Objects:**
-```javascript
-import { Environment } from './environment/Environment.js';
+This will start a development server at `http://localhost:3000`.
 
-// Create environment with custom configuration
-const environment = new Environment(scene, {
-    useTerrain: true,
-    useWater: true,
-    enableDayNightCycle: true,
-    enableWeather: true,
-    timeOfDay: {
-        startTime: 6,      // Start at 6 AM
-        timeSpeed: 100,    // 100x real-time
-        cycleDuration: 24  // 24 minutes for full cycle
-    },
-    weather: {
-        cloudDensity: 0.7, // 0-1
-        rainIntensity: 0.3, // 0-1
-        windSpeed: 2
-    }
-});
+### Build
 
-// Control time of day
-environment.setTimeOfDay(18); // Set to 6 PM (sunset)
-
-// Change weather
-environment.setWeather({
-    cloudDensity: 0.9,
-    rainIntensity: 0.6,
-    windSpeed: 3
-});
+```bash
+npm run build
 ```
 
-**Adding Custom Airports:**
-```javascript
-import { Airport } from './environment/Airport.js';
+## Controls
 
-const customAirport = new Airport(scene, {
-    position: new THREE.Vector3(1000, 0, 1000),
-    runwayLength: 2500,
-    runwayWidth: 60,
-    name: 'Custom Airport',
-    heading: 90  // Runway heading in degrees
-});
-customAirport.build();
-```
+| Key | Action |
+|-----|--------|
+| W / ↑ | Pitch down (nose down) |
+| S / ↓ | Pitch up (nose up) |
+| A / ← | Roll left |
+| D / → | Roll right |
+| Q | Yaw left |
+| E | Yaw right |
+| Shift | Increase throttle |
+| Ctrl | Decrease throttle |
+| R | Reset position |
 
-### Performance Considerations
-- Fixed timestep physics (60 Hz) for consistency
-- Variable timestep rendering for smooth visuals
-- Efficient Three.js object management
-- Shadow map optimization
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 🙏 Acknowledgments
+## Technologies
 
 - [Three.js](https://threejs.org/) - 3D graphics library
-- [Vite](https://vitejs.dev/) - Build tool
-- Flight dynamics references from NASA and aviation literature
+- [Vite](https://vitejs.dev/) - Build tool and development server
+
+## License
+
+MIT
