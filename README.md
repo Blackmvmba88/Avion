@@ -319,6 +319,56 @@ aircraft.toggleParkingBrake();
 - **StallSpinDynamics**: Stall warnings, buffet, wing drop, and spin entry/recovery
 - **LandingGear**: Spring-damper suspension, wheel brakes, nosewheel steering
 
+### Aircraft Expansion (Phase 4)
+The simulator includes a complete aircraft expansion system for managing multiple aircraft types:
+
+```javascript
+import { 
+    AircraftFactory, 
+    aircraftRegistry, 
+    AircraftParameters,
+    DamageModel,
+    FuelSystem 
+} from './aircraft/index.js';
+
+// Create aircraft from registered types
+const cessna = AircraftFactory.create('cessna172');
+const f22 = AircraftFactory.create('f22');
+
+// List available aircraft types
+const types = AircraftFactory.getAvailableTypes();
+console.log(types); // [{id: 'basicJet', name: 'Basic Jet'}, ...]
+
+// Customize aircraft parameters
+const params = new AircraftParameters({
+    mass: 1200,
+    wingArea: 18,
+    maxThrust: 25000
+});
+console.log(params.getDerivedParams()); // aspectRatio, wingLoading, etc.
+
+// Aircraft damage model
+const damage = new DamageModel({ maxGLoad: 6, maxSpeed: 250 });
+damage.applyDamage('leftWing', 25, 'collision', 'Bird strike');
+const effects = damage.update({ airspeed: 200, loadFactor: 2, isOnGround: false }, 0.016);
+console.log(effects.liftMultiplier); // Reduced lift from damage
+
+// Fuel system
+const fuel = new FuelSystem({ 
+    fuelType: 'JET_A',
+    baseConsumptionRate: 0.5 
+});
+fuel.consumeFuel({ throttle: 0.8, altitude: 5000, airspeed: 150 }, 0.016);
+console.log(fuel.calculateRange({ throttle: 0.7, airspeed: 120 })); // range, endurance
+```
+
+**Available Systems:**
+- **AircraftRegistry**: Centralized store for aircraft type definitions
+- **AircraftFactory**: Factory pattern for creating aircraft instances
+- **AircraftParameters**: Customizable parameters with validation and bounds
+- **DamageModel**: Component-based damage tracking with performance effects
+- **FuelSystem**: Multi-tank fuel management with consumption modeling
+
 ## 📐 Physics Model
 
 ### Lift Equation
@@ -374,11 +424,11 @@ Where:
 - [x] Stall and spin dynamics (stall warnings, buffet, spin recovery)
 - [x] Landing gear physics (suspension, braking, steering)
 
-### Phase 4: Aircraft Expansion (Planned)
-- [ ] Multiple aircraft types
-- [ ] Customizable aircraft parameters
-- [ ] Aircraft damage model
-- [ ] Fuel system
+### Phase 4: Aircraft Expansion ✅
+- [x] Multiple aircraft types (AircraftRegistry, AircraftFactory)
+- [x] Customizable aircraft parameters (AircraftParameters)
+- [x] Aircraft damage model (DamageModel)
+- [x] Fuel system (FuelSystem)
 
 ### Phase 5: Gameplay Features (Planned)
 - [ ] Mission system
