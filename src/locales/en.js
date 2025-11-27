@@ -79,6 +79,119 @@ export const en = {
         reconnecting: 'Reconnecting...',
         connectionLost: 'Connection lost',
         connectionError: 'Connection error'
+    },
+
+    // Phase 5: Gameplay Features translations
+    missions: {
+        title: 'Missions',
+        available: 'Available Missions',
+        active: 'Active Mission',
+        completed: 'Completed',
+        failed: 'Failed',
+        pending: 'Pending',
+        objective: 'Objective',
+        objectives: 'Objectives',
+        progress: 'Progress',
+        timeRemaining: 'Time Remaining',
+        start: 'Start Mission',
+        abort: 'Abort Mission',
+        retry: 'Retry',
+        complete: 'Mission Complete!',
+        failedMessage: 'Mission Failed',
+        difficulty: 'Difficulty',
+        rewards: 'Rewards',
+        score: 'Score'
+    },
+
+    navigation: {
+        title: 'Navigation',
+        waypoint: 'Waypoint',
+        waypoints: 'Waypoints',
+        distance: 'Distance',
+        bearing: 'Bearing',
+        eta: 'ETA',
+        next: 'Next Waypoint',
+        current: 'Current Waypoint',
+        reached: 'Waypoint Reached',
+        flightPlan: 'Flight Plan',
+        clearRoute: 'Clear Route',
+        addWaypoint: 'Add Waypoint',
+        removeWaypoint: 'Remove Waypoint',
+        directTo: 'Direct To'
+    },
+
+    instruments: {
+        title: 'Instruments',
+        airspeed: 'Airspeed',
+        altitude: 'Altitude',
+        verticalSpeed: 'Vertical Speed',
+        attitude: 'Attitude',
+        compass: 'Compass',
+        engine: 'Engine',
+        fuel: 'Fuel',
+        gForce: 'G-Force',
+        flaps: 'Flaps',
+        gear: 'Landing Gear',
+        autopilot: 'Autopilot'
+    },
+
+    multiplayer: {
+        title: 'Multiplayer',
+        lobby: 'Lobby',
+        room: 'Room',
+        players: 'Players',
+        host: 'Host',
+        join: 'Join',
+        leave: 'Leave',
+        create: 'Create Room',
+        kick: 'Kick Player',
+        chat: 'Chat',
+        ready: 'Ready',
+        start: 'Start Game',
+        waiting: 'Waiting for players...',
+        playerJoined: '{name} joined',
+        playerLeft: '{name} left',
+        youAreHost: 'You are the host',
+        kicked: 'You were kicked from the room'
+    },
+
+    achievements: {
+        title: 'Achievements',
+        unlocked: 'Unlocked!',
+        locked: 'Locked',
+        progress: 'Progress',
+        points: 'Points',
+        category: 'Category',
+        rarity: {
+            common: 'Common',
+            uncommon: 'Uncommon',
+            rare: 'Rare',
+            epic: 'Epic',
+            legendary: 'Legendary'
+        },
+        categories: {
+            flight: 'Flight',
+            navigation: 'Navigation',
+            missions: 'Missions',
+            skill: 'Skill',
+            exploration: 'Exploration',
+            multiplayer: 'Multiplayer',
+            secret: 'Secret'
+        }
+    },
+
+    scoring: {
+        title: 'Score',
+        current: 'Current Score',
+        highScore: 'High Score',
+        multiplier: 'Multiplier',
+        combo: 'Combo',
+        points: 'Points',
+        bonus: 'Bonus',
+        penalty: 'Penalty',
+        total: 'Total',
+        session: 'Session Stats',
+        lifetime: 'Lifetime Stats'
     }
 };
 
