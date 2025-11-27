@@ -5,3 +5,4 @@ export { GroundEffect, GROUND_EFFECT_CONSTANTS } from './GroundEffect.js';
 export { WindSystem, TurbulenceType, WIND_CONSTANTS } from './WindSystem.js';
 export { StallSpinDynamics, StallWarningLevel, SpinState, STALL_CONSTANTS } from './StallSpinDynamics.js';
 export { LandingGear, GearState, GEAR_CONSTANTS } from './LandingGear.js';
+export { IFlightModel, FlightModelFidelity } from './IFlightModel.js';
