@@ -86,7 +86,7 @@ export class Loop {
         }
         
         this.animationFrameId = requestAnimationFrame(this.tick);
-    }
+    };
 }
 
 export default Loop;
