@@ -274,6 +274,51 @@ const pool = Optimizer.createPool(() => new Particle(), 100);
 
 For detailed documentation, see [NEW_FEATURES.md](docs/NEW_FEATURES.md)
 
+### Advanced Physics (Phase 3)
+The simulator includes integrated advanced physics for realistic flight behavior:
+
+```javascript
+import { AdvancedAircraft } from './aircraft/AdvancedAircraft.js';
+import { TurbulenceType } from './physics/IntegratedFlightPhysics.js';
+
+// Create an aircraft with advanced physics
+const aircraft = new AdvancedAircraft({
+    name: 'MyJet',
+    aircraft: {
+        mass: 2000,
+        wingArea: 20,
+        wingSpan: 12,
+        maxThrust: 30000,
+        stallAngle: 18,
+        stallSpeed: 45
+    },
+    wind: {
+        enabled: true,
+        speed: 10,
+        direction: 270, // from west
+        turbulenceType: TurbulenceType.LIGHT,
+        gustEnabled: true
+    }
+});
+
+// Check flight status
+console.log(aircraft.isStalled());        // Stall detection
+console.log(aircraft.isInGroundEffect()); // Ground effect status
+console.log(aircraft.isOnGround());       // Landing gear contact
+
+// Control landing gear and brakes
+aircraft.toggleLandingGear();
+aircraft.setBrakes(0.5);
+aircraft.toggleParkingBrake();
+```
+
+**Available Physics Systems:**
+- **AdvancedFlightModel**: ISA atmosphere, Mach number effects, accurate lift/drag polar
+- **GroundEffect**: Increased lift and reduced induced drag when close to ground
+- **WindSystem**: Steady wind, gusts, turbulence, thermals, and wind shear
+- **StallSpinDynamics**: Stall warnings, buffet, wing drop, and spin entry/recovery
+- **LandingGear**: Spring-damper suspension, wheel brakes, nosewheel steering
+
 ## 📐 Physics Model
 
 ### Lift Equation
@@ -322,12 +367,12 @@ Where:
 - [x] Day/night cycle
 - [x] Basic weather (clouds, rain)
 
-### Phase 3: Advanced Physics (Planned)
-- [ ] More accurate flight model
-- [ ] Ground effect
-- [ ] Wind and turbulence
-- [ ] Stall and spin dynamics
-- [ ] Landing gear physics
+### Phase 3: Advanced Physics ✅
+- [x] More accurate flight model (ISA atmosphere, Mach effects, aspect ratio)
+- [x] Ground effect (increased lift, reduced drag near ground)
+- [x] Wind and turbulence (gusts, thermals, wind shear)
+- [x] Stall and spin dynamics (stall warnings, buffet, spin recovery)
+- [x] Landing gear physics (suspension, braking, steering)
 
 ### Phase 4: Aircraft Expansion (Planned)
 - [ ] Multiple aircraft types
