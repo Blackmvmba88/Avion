@@ -17,6 +17,24 @@ import { StallSpinDynamics, StallWarningLevel, SpinState } from './StallSpinDyna
 import { LandingGear, GearState } from './LandingGear.js';
 
 /**
+ * Constants for integrated physics calculations
+ */
+const INTEGRATED_CONSTANTS = Object.freeze({
+    // Default induced drag ratio when lift coefficient is very low
+    // At low CL, induced drag is typically about 50% of total drag for general aviation
+    DEFAULT_INDUCED_DRAG_RATIO: 0.5,
+
+    // Moment of inertia multipliers for simplified calculation
+    // These represent typical ratios of moment of inertia to mass for light aircraft
+    // Ixx (roll) ≈ mass × 2 (narrow fuselage, wings provide most inertia)
+    // Iyy (pitch) ≈ mass × 6 (length of fuselage dominates)
+    // Izz (yaw) ≈ mass × 5 (combination of fuselage and wing span)
+    INERTIA_ROLL_FACTOR: 2,
+    INERTIA_PITCH_FACTOR: 6,
+    INERTIA_YAW_FACTOR: 5
+});
+
+/**
  * Configuration options for IntegratedFlightPhysics
  * @typedef {Object} IntegratedPhysicsConfig
  * @property {Object} aircraft - Aircraft parameters
@@ -137,6 +155,19 @@ export class IntegratedFlightPhysics {
     }
 
     /**
+     * Calculate load factor (g-load) from current lift and weight
+     * Load factor n = L / W where L is lift and W is weight
+     * @param {THREE.Vector3} liftForce - Lift force vector
+     * @returns {number} Load factor (1.0 = level flight)
+     * @private
+     */
+    _calculateLoadFactor(liftForce) {
+        const weight = this.config.mass * ADVANCED_CONSTANTS.GRAVITY;
+        const liftMagnitude = liftForce.length();
+        return weight > 0 ? liftMagnitude / weight : 1.0;
+    }
+
+    /**
      * Update all physics systems for one frame
      * @param {Object} state - Current aircraft state
      * @param {THREE.Vector3} state.position - Aircraft position
@@ -184,13 +215,17 @@ export class IntegratedFlightPhysics {
         let liftCoefficient = this.flightModel.calculateLiftCoefficient(angleOfAttack, machNumber);
         let dragCoefficient = this.flightModel.calculateDragCoefficient(liftCoefficient, machNumber);
 
-        // Update stall/spin dynamics
+        // Calculate preliminary lift for load factor estimation
+        const preliminaryLift = this.flightModel.calculateLiftForce(dynamicPressure, liftCoefficient, trueAirVelocity, orientation);
+        const loadFactor = this._calculateLoadFactor(preliminaryLift);
+
+        // Update stall/spin dynamics with calculated load factor
         let stallSpinResult = null;
         if (this.systemsEnabled.stallSpin) {
             stallSpinResult = this.stallSpin.update({
                 angleOfAttack: aoaDegrees,
                 airspeed,
-                loadFactor: 1, // TODO: Calculate actual load factor
+                loadFactor,
                 angularVelocity: this.angularVelocity,
                 orientation,
                 controlInputs: controls
@@ -216,8 +251,10 @@ export class IntegratedFlightPhysics {
         let groundEffectResult = null;
         if (this.systemsEnabled.groundEffect && this.groundEffect.isInGroundEffect(position)) {
             // Calculate induced drag ratio for ground effect
+            // Use constant when lift coefficient is very low to avoid division issues
             const inducedDragRatio = Math.abs(liftCoefficient) > 0.01 ?
-                (liftCoefficient * liftCoefficient) / (Math.PI * this.flightModel.aspectRatio * this.flightModel.oswaldEfficiency * dragCoefficient) : 0.5;
+                (liftCoefficient * liftCoefficient) / (Math.PI * this.flightModel.aspectRatio * this.flightModel.oswaldEfficiency * dragCoefficient) :
+                INTEGRATED_CONSTANTS.DEFAULT_INDUCED_DRAG_RATIO;
 
             groundEffectResult = this.groundEffect.applyGroundEffect({
                 position,
@@ -307,11 +344,12 @@ export class IntegratedFlightPhysics {
             moments.add(wingDropMoment);
         }
 
-        // Calculate angular acceleration
+        // Calculate angular acceleration using moment of inertia approximations
+        // These use simplified factors based on typical light aircraft properties
         const angularAcceleration = new THREE.Vector3(
-            moments.x / (this.config.mass * 2),  // Ixx approximation
-            moments.y / (this.config.mass * 6),  // Iyy approximation
-            moments.z / (this.config.mass * 5)   // Izz approximation
+            moments.x / (this.config.mass * INTEGRATED_CONSTANTS.INERTIA_ROLL_FACTOR),
+            moments.y / (this.config.mass * INTEGRATED_CONSTANTS.INERTIA_PITCH_FACTOR),
+            moments.z / (this.config.mass * INTEGRATED_CONSTANTS.INERTIA_YAW_FACTOR)
         );
 
         // Update angular velocity
@@ -351,6 +389,7 @@ export class IntegratedFlightPhysics {
             sideslipAngle: THREE.MathUtils.radToDeg(sideslipAngle),
             altitude,
             dynamicPressure,
+            loadFactor,
 
             // Wind info
             wind: this.systemsEnabled.wind ? {
