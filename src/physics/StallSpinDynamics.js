@@ -83,6 +83,8 @@ export class StallSpinDynamics {
         this._recoveryTimer = 0;
         this._isStalled = false;
         this._buffetIntensity = 0;
+        this._time = 0;  // Time accumulator for buffet variation
+        this._buffetSeed = Math.random() * 1000;  // Seed for buffet noise
         
         // Cached calculations
         this._cachedAngleOfAttack = 0;
@@ -179,8 +181,12 @@ export class StallSpinDynamics {
         const excess = Math.abs(angleOfAttack) - (stallAngle - 4);
         const normalized = Math.max(0, Math.min(1, excess / 8));
         
-        // Add some randomness for realism
-        const randomFactor = 0.8 + Math.random() * 0.4;
+        // Use time-based noise instead of random for consistent, deterministic buffet
+        // This creates a realistic vibration pattern without per-frame random calls
+        const noise = Math.sin(this._time * 15 + this._buffetSeed) * 0.3 +
+                      Math.sin(this._time * 23 + this._buffetSeed * 1.5) * 0.15 +
+                      Math.sin(this._time * 47 + this._buffetSeed * 0.7) * 0.05;
+        const randomFactor = 0.9 + noise * 0.2;
         
         return normalized * randomFactor;
     }
@@ -439,6 +445,9 @@ export class StallSpinDynamics {
     update(state, deltaTime) {
         const { angleOfAttack, airspeed, loadFactor = 1, angularVelocity, orientation, controlInputs } = state;
         
+        // Update time accumulator for buffet noise
+        this._time += deltaTime;
+        
         // Cache values
         this._cachedAngleOfAttack = angleOfAttack;
         this._cachedAirspeed = airspeed;
@@ -528,6 +537,7 @@ export class StallSpinDynamics {
         this._recoveryTimer = 0;
         this._isStalled = false;
         this._buffetIntensity = 0;
+        this._time = 0;
     }
 }
 
