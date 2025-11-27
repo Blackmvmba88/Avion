@@ -14,3 +14,4 @@ export { PlatformDetector } from './PlatformDetector.js';
 export { default as platformDetector } from './PlatformDetector.js';
 export { VersionManager } from './VersionManager.js';
 export { default as versionManager } from './VersionManager.js';
+export { AppInitializer } from './AppInitializer.js';
