@@ -5,6 +5,21 @@
  */
 
 /**
+ * Damage calculation constants
+ */
+const DAMAGE_CONSTANTS = Object.freeze({
+    // Crash landing damage multipliers
+    CRASH_FUSELAGE_FACTOR: 0.7,         // Fuselage damage from crash
+    CRASH_ENGINE_FACTOR: 0.5,           // Engine damage from crash
+    // Hard landing damage
+    HARD_LANDING_MAX_DAMAGE: 30,        // Max damage from hard landing
+    CRASH_BASE_DAMAGE: 50,              // Base damage from crash
+    // Effect multipliers
+    ROLL_BIAS_FACTOR: 0.3,              // Wing asymmetry roll bias factor
+    FUEL_LEAK_MAX_RATE: 0.5             // Maximum fuel leak rate per second
+});
+
+/**
  * Damage types that can affect aircraft
  */
 export const DamageType = Object.freeze({
@@ -233,14 +248,14 @@ export class DamageModel {
             
             if (impactSpeed >= this.crashThreshold) {
                 // Crash - severe damage to all components
-                const damage = Math.min(100, (impactSpeed / this.crashThreshold) * 50);
+                const damage = Math.min(100, (impactSpeed / this.crashThreshold) * DAMAGE_CONSTANTS.CRASH_BASE_DAMAGE);
                 this.applyDamage(DamageComponent.LANDING_GEAR, damage, DamageType.COLLISION, 'Crash landing');
-                this.applyDamage(DamageComponent.FUSELAGE, damage * 0.7, DamageType.COLLISION, 'Crash impact');
-                this.applyDamage(DamageComponent.ENGINE, damage * 0.5, DamageType.COLLISION, 'Crash impact');
+                this.applyDamage(DamageComponent.FUSELAGE, damage * DAMAGE_CONSTANTS.CRASH_FUSELAGE_FACTOR, DamageType.COLLISION, 'Crash impact');
+                this.applyDamage(DamageComponent.ENGINE, damage * DAMAGE_CONSTANTS.CRASH_ENGINE_FACTOR, DamageType.COLLISION, 'Crash impact');
             } else {
                 // Hard landing - landing gear damage
                 const damage = ((impactSpeed - this.hardLandingThreshold) / 
-                    (this.crashThreshold - this.hardLandingThreshold)) * 30;
+                    (this.crashThreshold - this.hardLandingThreshold)) * DAMAGE_CONSTANTS.HARD_LANDING_MAX_DAMAGE;
                 this.applyDamage(DamageComponent.LANDING_GEAR, damage, DamageType.COLLISION, 'Hard landing');
             }
         }
@@ -268,7 +283,7 @@ export class DamageModel {
         // Wing asymmetry causes roll
         const wingDifference = this._componentHealth[DamageComponent.LEFT_WING] - 
             this._componentHealth[DamageComponent.RIGHT_WING];
-        effects.rollBias = -wingDifference / 100 * 0.3;
+        effects.rollBias = -wingDifference / 100 * DAMAGE_CONSTANTS.ROLL_BIAS_FACTOR;
 
         // Tail damage affects pitch and yaw authority
         const tailHealth = this._componentHealth[DamageComponent.TAIL] / 100;
@@ -282,7 +297,7 @@ export class DamageModel {
         effects.yawAuthority *= controlHealth;
 
         // Fuel system damage causes fuel leak
-        effects.fuelLeakRate = (100 - this._componentHealth[DamageComponent.FUEL_SYSTEM]) / 100 * 0.5;
+        effects.fuelLeakRate = (100 - this._componentHealth[DamageComponent.FUEL_SYSTEM]) / 100 * DAMAGE_CONSTANTS.FUEL_LEAK_MAX_RATE;
 
         // Landing gear damage affects ground handling
         effects.landingGearFunctional = this._componentHealth[DamageComponent.LANDING_GEAR] > 25;

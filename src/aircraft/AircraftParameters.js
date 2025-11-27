@@ -227,7 +227,7 @@ export class AircraftParameters {
      * @returns {Object} Computed values based on current parameters
      */
     getDerivedParams() {
-        const aspectRatio = (this._params.wingSpan * this._params.wingSpan) / this._params.wingArea;
+        const aspectRatio = (this._params.wingSpan ** 2) / this._params.wingArea;
         const wingLoading = this._params.mass / this._params.wingArea;
         const thrustToWeight = this._params.maxThrust / (this._params.mass * 9.81);
         

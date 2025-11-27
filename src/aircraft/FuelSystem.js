@@ -5,6 +5,19 @@
  */
 
 /**
+ * Fuel system constants
+ */
+const FUEL_CONSTANTS = Object.freeze({
+    MAX_HISTORY_SIZE: 1000,         // Maximum consumption history entries
+    TRIM_HISTORY_SIZE: 500,         // Size to trim history to when exceeding max
+    WING_IMBALANCE_THRESHOLD: 20,   // Liters difference to trigger imbalance warning
+    AFTERBURNER_THRESHOLD: 0.9,     // Throttle threshold for afterburner
+    AFTERBURNER_MULTIPLIER: 10,     // Consumption multiplier for afterburner
+    MAX_ALTITUDE_FACTOR: 10000,     // Altitude (m) for max efficiency
+    ALTITUDE_EFFICIENCY_GAIN: 0.2   // Maximum efficiency improvement from altitude
+});
+
+/**
  * Fuel types and their properties
  */
 export const FuelType = Object.freeze({
@@ -275,8 +288,8 @@ export class FuelSystem {
         });
         
         // Keep history limited
-        if (this._consumptionHistory.length > 1000) {
-            this._consumptionHistory = this._consumptionHistory.slice(-500);
+        if (this._consumptionHistory.length > FUEL_CONSTANTS.MAX_HISTORY_SIZE) {
+            this._consumptionHistory = this._consumptionHistory.slice(-FUEL_CONSTANTS.TRIM_HISTORY_SIZE);
         }
         
         // Check fuel warnings
@@ -310,14 +323,14 @@ export class FuelSystem {
         let rate = this.baseConsumptionRate * state.throttle;
         
         // Altitude factor - higher altitude = more efficient (up to a point)
-        const altitudeFactor = state.altitude < 10000 
-            ? 1.0 - (state.altitude / 10000) * 0.2  // 20% improvement up to 10km
-            : 0.8;  // Cap at 20% improvement
+        const altitudeFactor = state.altitude < FUEL_CONSTANTS.MAX_ALTITUDE_FACTOR 
+            ? 1.0 - (state.altitude / FUEL_CONSTANTS.MAX_ALTITUDE_FACTOR) * FUEL_CONSTANTS.ALTITUDE_EFFICIENCY_GAIN
+            : 1.0 - FUEL_CONSTANTS.ALTITUDE_EFFICIENCY_GAIN;
         rate *= altitudeFactor;
         
         // Afterburner simulation - very high throttle = much higher consumption
-        if (state.throttle > 0.9) {
-            rate *= 1 + (state.throttle - 0.9) * 10; // Up to 2x consumption
+        if (state.throttle > FUEL_CONSTANTS.AFTERBURNER_THRESHOLD) {
+            rate *= 1 + (state.throttle - FUEL_CONSTANTS.AFTERBURNER_THRESHOLD) * FUEL_CONSTANTS.AFTERBURNER_MULTIPLIER;
         }
         
         return Math.max(0, rate);
@@ -368,7 +381,7 @@ export class FuelSystem {
         const rightWing = this._tanks.get(TankPosition.RIGHT_WING);
         if (leftWing && rightWing) {
             const imbalance = Math.abs(leftWing.currentLevel - rightWing.currentLevel);
-            if (imbalance > 20) {
+            if (imbalance > FUEL_CONSTANTS.WING_IMBALANCE_THRESHOLD) {
                 warnings.push('FUEL_IMBALANCE');
             }
         }
