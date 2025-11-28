@@ -1,16 +1,53 @@
 /**
  * Game Module Index
  * Exports game-specific components
+ * Phase 5: Gameplay Features
  */
 
-// TODO: Implement game components
-// export { MissionManager } from './missions/MissionManager.js';
-// export { Mission01_Takeoff } from './missions/Mission01_Takeoff.js';
-// export { Mission02_Landing } from './missions/Mission02_Landing.js';
-// export { Menu } from './ui/Menu.js';
-// export { Settings } from './ui/Settings.js';
-// export { Overlay } from './ui/Overlay.js';
-// export { SaveSystem } from './save/SaveSystem.js';
-// export { StorageAdapter } from './save/StorageAdapter.js';
+// Mission System
+export { 
+    Mission, 
+    MissionObjective, 
+    MissionStatus, 
+    ObjectiveType 
+} from './missions/index.js';
+export { MissionManager } from './missions/index.js';
+export { createSampleMissions } from './missions/index.js';
+
+// Waypoint Navigation
+export { 
+    Waypoint, 
+    WaypointType 
+} from './navigation/index.js';
+export { 
+    WaypointNavigation, 
+    FlightPlanStatus 
+} from './navigation/index.js';
+
+// UI Components
+export { InstrumentPanel } from './ui/index.js';
+
+// Multiplayer
+export { 
+    MultiplayerManager, 
+    PlayerState, 
+    RoomState, 
+    MultiplayerMessageType 
+} from './multiplayer/index.js';
+
+// Achievements and Scoring
+export { 
+    AchievementSystem, 
+    Achievement, 
+    AchievementCategory, 
+    AchievementRarity 
+} from './save/index.js';
+export { 
+    ScoreManager, 
+    ScoreEntry, 
+    SessionStats, 
+    ScoreEventType 
+} from './save/index.js';
+export { createDefaultAchievements } from './save/index.js';
 
 export default {};

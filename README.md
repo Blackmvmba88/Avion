@@ -369,6 +369,76 @@ console.log(fuel.calculateRange({ throttle: 0.7, airspeed: 120 })); // range, en
 - **DamageModel**: Component-based damage tracking with performance effects
 - **FuelSystem**: Multi-tank fuel management with consumption modeling
 
+### Gameplay Features (Phase 5)
+The simulator now includes comprehensive gameplay features for missions, navigation, and multiplayer:
+
+```javascript
+import { 
+    MissionManager, 
+    createSampleMissions,
+    WaypointNavigation, 
+    Waypoint,
+    InstrumentPanel,
+    MultiplayerManager,
+    AchievementSystem,
+    ScoreManager,
+    createDefaultAchievements
+} from './game/index.js';
+
+// Mission System
+const missionManager = new MissionManager();
+createSampleMissions().forEach(m => missionManager.registerMission(m));
+
+// Start a mission
+missionManager.startMission('mission_01_takeoff');
+missionManager.on('missionCompleted', ({ mission }) => {
+    console.log(`Completed: ${mission.name} with score ${mission.score}`);
+});
+
+// Waypoint Navigation
+const navigation = new WaypointNavigation();
+navigation.addWaypoint({ name: 'Alpha', x: 1000, y: 500, z: 0 });
+navigation.addWaypoint({ name: 'Bravo', x: 2000, y: 500, z: 1000 });
+navigation.start();
+
+// Instrument Panel (Cockpit View)
+const instruments = new InstrumentPanel();
+instruments.show();
+instruments.update({
+    pitch: 5, roll: 0, heading: 90,
+    altitude: 3000, airspeed: 150, throttle: 0.7
+});
+
+// Multiplayer
+const multiplayer = new MultiplayerManager();
+await multiplayer.connect('ws://server.com', { name: 'Pilot1' });
+multiplayer.joinRoom('room123');
+multiplayer.on('playerJoined', ({ player }) => console.log(`${player.name} joined!`));
+
+// Achievements
+const achievements = new AchievementSystem({ 
+    achievements: createDefaultAchievements() 
+});
+achievements.on('achievementUnlocked', ({ achievement }) => {
+    console.log(`Unlocked: ${achievement.name}!`);
+});
+
+// Scoring
+const scoring = new ScoreManager();
+scoring.recordLanding({ quality: 'perfect' });
+scoring.on('scoreAdded', ({ totalPoints }) => console.log(`+${totalPoints} points!`));
+```
+
+**Available Systems:**
+- **MissionManager**: Mission lifecycle, objectives, and progress tracking
+- **Mission**: Individual missions with multiple objectives and scoring
+- **WaypointNavigation**: Flight plan management with 3D waypoint markers
+- **Waypoint**: Individual navigation points with capture radius
+- **InstrumentPanel**: Full cockpit instrument display (attitude, altitude, airspeed, etc.)
+- **MultiplayerManager**: Room-based multiplayer with player synchronization
+- **AchievementSystem**: Achievements with categories, rarity, and progress tracking
+- **ScoreManager**: Points, combos, multipliers, and session statistics
+
 ## 📐 Physics Model
 
 ### Lift Equation
@@ -430,12 +500,12 @@ Where:
 - [x] Aircraft damage model (DamageModel)
 - [x] Fuel system (FuelSystem)
 
-### Phase 5: Gameplay Features (Planned)
-- [ ] Mission system
-- [ ] Waypoint navigation
-- [ ] Instrument panel (cockpit view)
-- [ ] Multiplayer support
-- [ ] Achievements and scoring
+### Phase 5: Gameplay Features ✅
+- [x] Mission system (MissionManager, Mission, Objectives)
+- [x] Waypoint navigation (WaypointNavigation, Waypoint with 3D markers)
+- [x] Instrument panel (cockpit view with flight instruments)
+- [x] Multiplayer support (MultiplayerManager, PlayerState, Rooms)
+- [x] Achievements and scoring (AchievementSystem, ScoreManager)
 
 ### Phase 6: Polish (Planned)
 - [ ] Sound effects and engine audio
