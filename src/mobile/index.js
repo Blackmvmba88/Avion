@@ -3,9 +3,6 @@
  * Exports mobile-specific components
  */
 
-// TODO: Implement mobile components
-// export { MobileInputAdapter } from './MobileInputAdapter.js';
-// export { MobileHUD } from './MobileHUD.js';
-// export { PerformanceSwitch } from './PerformanceSwitch.js';
+export { TouchControls, TouchZone, VirtualButton } from './TouchControls.js';
 
 export default {};

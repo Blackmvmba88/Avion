@@ -439,6 +439,75 @@ scoring.on('scoreAdded', ({ totalPoints }) => console.log(`+${totalPoints} point
 - **AchievementSystem**: Achievements with categories, rarity, and progress tracking
 - **ScoreManager**: Points, combos, multipliers, and session statistics
 
+### Polish Features (Phase 6)
+The simulator now includes complete polish features for a fully-featured experience:
+
+```javascript
+import { AudioManager, AudioType } from './audio/index.js';
+import { ParticleSystem, ParticleType } from './effects/index.js';
+import { SettingsMenu, SaveManager } from './game/index.js';
+import { TouchControls } from './mobile/index.js';
+
+// Audio System
+const audio = new AudioManager({
+    masterVolume: 1.0,
+    engineVolume: 0.7,
+    enabled: true
+});
+await audio.initialize();
+audio.startEngineSound();
+audio.startWindSound();
+audio.update({ throttle: 0.8, airspeed: 150 });
+
+// Particle Effects
+const particles = new ParticleSystem({ quality: 'high' });
+particles.createExhaustEmitters([
+    new THREE.Vector3(-1.5, 0, -4),
+    new THREE.Vector3(1.5, 0, -4)
+]);
+particles.createContrailEmitters([
+    new THREE.Vector3(-6, 0, -0.5),
+    new THREE.Vector3(6, 0, -0.5)
+]);
+scene.add(particles.getObject3D());
+particles.update(deltaTime, { position, rotation, velocity, throttle, altitude });
+
+// Settings Menu
+const settingsMenu = new SettingsMenu({
+    onChange: (path, value) => {
+        console.log(`Setting ${path} changed to ${value}`);
+    }
+});
+settingsMenu.show();
+
+// Save/Load
+const saves = new SaveManager();
+saves.save({ position, velocity, throttle }, 'My Save');
+const loaded = saves.load(slotId);
+saves.autoSave(gameState);
+
+// Mobile Touch Controls
+if (TouchControls.isTouchDevice()) {
+    const touch = new TouchControls({
+        onControlChange: (controls) => {
+            // { pitch, roll, yaw, throttle, buttons }
+        },
+        onButtonPress: (buttonId, pressed) => {
+            console.log(`Button ${buttonId}: ${pressed}`);
+        }
+    });
+    touch.show();
+}
+```
+
+**Available Systems:**
+- **AudioManager**: Engine sounds, wind, effects using Web Audio API
+- **ParticleSystem**: GPU-optimized exhaust, contrails, smoke effects
+- **SettingsManager**: Persistent user preferences with categories
+- **SettingsMenu**: Visual settings UI with tabs and controls
+- **SaveManager**: Game state persistence with auto-save support
+- **TouchControls**: Virtual joysticks and buttons for mobile
+
 ## 📐 Physics Model
 
 ### Lift Equation
@@ -507,12 +576,12 @@ Where:
 - [x] Multiplayer support (MultiplayerManager, PlayerState, Rooms)
 - [x] Achievements and scoring (AchievementSystem, ScoreManager)
 
-### Phase 6: Polish (Planned)
-- [ ] Sound effects and engine audio
-- [ ] Particle effects (exhaust, contrails)
-- [ ] Settings menu
-- [ ] Save/load functionality
-- [ ] Mobile touch controls
+### Phase 6: Polish ✅
+- [x] Sound effects and engine audio (AudioManager)
+- [x] Particle effects (exhaust, contrails) (ParticleSystem)
+- [x] Settings menu (SettingsManager, SettingsMenu)
+- [x] Save/load functionality (SaveManager)
+- [x] Mobile touch controls (TouchControls)
 
 ## 🛠️ Development
 

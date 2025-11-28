@@ -18,3 +18,5 @@ export {
 } from './ScoreManager.js';
 
 export { createDefaultAchievements } from './DefaultAchievements.js';
+
+export { SaveManager, SaveSlot, AutoSaveConfig } from './SaveManager.js';
