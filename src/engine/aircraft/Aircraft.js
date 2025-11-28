@@ -3,7 +3,8 @@
  * Represents an aircraft with physics and rendering
  */
 
-import { AIRCRAFT_CONFIG } from '../../config/aircraft.config.js';
+// AIRCRAFT_CONFIG will be used for aircraft validation in future implementations
+import { AIRCRAFT_CONFIG as _AIRCRAFT_CONFIG } from '../../config/aircraft.config.js';
 
 export class Aircraft {
     constructor(config = {}) {
@@ -33,7 +34,7 @@ export class Aircraft {
      * Update aircraft physics and rendering
      * @param {number} deltaTime - Time since last frame
      */
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update physics
         // TODO: Update visual representation
     }
@@ -52,7 +53,7 @@ export class Aircraft {
      * @param {number} value - Input value (-1 to 1)
      */
     setControlInput(axis, value) {
-        if (this.controlInputs.hasOwnProperty(axis)) {
+        if (Object.prototype.hasOwnProperty.call(this.controlInputs, axis)) {
             this.controlInputs[axis] = Math.max(-1, Math.min(1, value));
         }
     }

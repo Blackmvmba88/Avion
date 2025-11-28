@@ -26,7 +26,7 @@ export class WaterBody {
      * Update water animation
      * @param {number} time - Current time
      */
-    update(time) {
+    update(_time) {
         // TODO: Update shader uniforms for animation
     }
 }

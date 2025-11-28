@@ -15,6 +15,7 @@ export default [
                 cancelAnimationFrame: 'readonly',
                 HTMLElement: 'readonly',
                 localStorage: 'readonly',
+                sessionStorage: 'readonly',
                 navigator: 'readonly',
                 fetch: 'readonly',
                 WebSocket: 'readonly',
@@ -27,7 +28,12 @@ export default [
                 MouseEvent: 'readonly',
                 TouchEvent: 'readonly',
                 DeviceOrientationEvent: 'readonly',
-                Gamepad: 'readonly'
+                Gamepad: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                process: 'readonly'
             }
         },
         rules: {

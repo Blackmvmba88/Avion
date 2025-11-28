@@ -31,7 +31,7 @@ export class Renderer {
      * @param {number} width - New width
      * @param {number} height - New height
      */
-    resize(width, height) {
+    resize(_width, _height) {
         // TODO: Update renderer size and camera aspect
     }
     

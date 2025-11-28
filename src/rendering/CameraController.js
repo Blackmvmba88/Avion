@@ -150,7 +150,7 @@ export class CameraController {
         let desiredPosition = new THREE.Vector3();
         
         switch (this.mode) {
-            case CAMERA_MODES.CHASE:
+            case CAMERA_MODES.CHASE: {
                 // Chase mode: camera follows behind aircraft with user orbit control
                 const offset = new THREE.Vector3(0, 0, this.currentDistance);
                 
@@ -167,8 +167,9 @@ export class CameraController {
                 desiredPosition.copy(targetPos).add(offset);
                 desiredPosition.y += heightOffset + 3; // Base height offset
                 break;
+            }
                 
-            case CAMERA_MODES.ORBIT:
+            case CAMERA_MODES.ORBIT: {
                 // Pure orbit mode: camera orbits around fixed point
                 const orbitOffset = new THREE.Vector3();
                 orbitOffset.x = Math.sin(this.orbitAngle.horizontal) * this.currentDistance;
@@ -177,13 +178,15 @@ export class CameraController {
                 
                 desiredPosition.copy(targetPos).add(orbitOffset);
                 break;
+            }
                 
-            case CAMERA_MODES.COCKPIT:
+            case CAMERA_MODES.COCKPIT: {
                 // Cockpit mode: camera inside aircraft
                 const cockpitOffset = new THREE.Vector3(0, 0.5, -1.5);
                 cockpitOffset.applyQuaternion(targetQuat);
                 desiredPosition.copy(targetPos).add(cockpitOffset);
                 break;
+            }
         }
         
         return desiredPosition;

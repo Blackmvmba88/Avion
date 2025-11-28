@@ -28,7 +28,7 @@ export class CameraController {
      * Update camera position
      * @param {number} deltaTime - Time since last frame
      */
-    update(deltaTime) {
+    update(_deltaTime) {
         if (!this.target) return;
         
         // TODO: Implement smooth camera following

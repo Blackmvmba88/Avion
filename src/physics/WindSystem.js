@@ -135,7 +135,7 @@ export class WindSystem {
      * @returns {THREE.Vector3} Turbulence velocity offset
      * @private
      */
-    _calculateTurbulence(deltaTime) {
+    _calculateTurbulence(_deltaTime) {
         if (this.turbulenceType === TurbulenceType.NONE) {
             this._turbulenceOffset.set(0, 0, 0);
             return this._turbulenceOffset;
@@ -347,7 +347,7 @@ export class WindSystem {
      */
     getWindForce(position, mass) {
         // This is a simplified model - actual force depends on aerodynamics
-        const wind = this.getWindAtPosition(position);
+        const _wind = this.getWindAtPosition(position);
         
         // Add sudden changes as impulse forces
         const gustComponent = this._gustForce.clone();

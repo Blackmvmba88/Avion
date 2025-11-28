@@ -22,7 +22,7 @@ export class Weather {
      * Update weather
      * @param {number} deltaTime - Time since last frame
      */
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update clouds
         // TODO: Update rain
         // TODO: Update wind variation

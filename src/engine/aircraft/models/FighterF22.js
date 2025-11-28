@@ -30,7 +30,7 @@ export class FighterF22 {
         // TODO: Decrease thrust
     }
     
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update aircraft
     }
 }

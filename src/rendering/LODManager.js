@@ -220,7 +220,7 @@ export class LODManager {
         this._stats.culledCount = 0;
         
         // Update each registered object
-        for (const [id, entry] of this._objects) {
+        for (const [_id, entry] of this._objects) {
             const distance = this.getDistanceToCamera(entry.lod);
             const newLevel = this.getLODLevel(distance, entry.currentLevel);
             
@@ -294,7 +294,7 @@ export class LODManager {
      * Clear all registered objects
      */
     clear() {
-        for (const [id, entry] of this._objects) {
+        for (const [_id, entry] of this._objects) {
             entry.lod.parent?.remove(entry.lod);
         }
         this._objects.clear();

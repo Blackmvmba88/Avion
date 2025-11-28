@@ -268,7 +268,7 @@ export class PlatformDetector {
      * @returns {string}
      */
     toString() {
-        const { isMobile, isTablet, isDesktop, isIOS, isAndroid, isWindows, isMac } = this.platform;
+        const { isMobile, isTablet, isDesktop: _isDesktop, isIOS, isAndroid, isWindows, isMac } = this.platform;
         
         let os = 'Unknown';
         if (isIOS) os = 'iOS';

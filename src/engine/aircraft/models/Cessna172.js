@@ -31,7 +31,7 @@ export class Cessna172 {
         // TODO: Animate gear
     }
     
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update aircraft
     }
 }

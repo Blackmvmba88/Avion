@@ -18,7 +18,7 @@ export class BasicJet {
         // TODO: Initialize aircraft systems
     }
     
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update aircraft
     }
 }

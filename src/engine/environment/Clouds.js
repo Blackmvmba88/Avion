@@ -24,7 +24,7 @@ export class Clouds {
      * Update cloud animation
      * @param {number} deltaTime - Time since last frame
      */
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Animate clouds drifting
     }
     

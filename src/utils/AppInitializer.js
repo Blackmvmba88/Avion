@@ -7,7 +7,7 @@ import i18n from './I18n.js';
 import locales from '../locales/index.js';
 import platformDetector from './PlatformDetector.js';
 import versionManager from './VersionManager.js';
-import { Validator } from './Validator.js';
+import { Validator as _Validator } from './Validator.js';
 import COMPATIBILITY_CONFIG from '../config/compatibility.config.js';
 
 export class AppInitializer {
