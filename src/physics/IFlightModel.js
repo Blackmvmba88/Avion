@@ -52,7 +52,7 @@ export class IFlightModel {
      * @param {number} deltaTime - Time step in seconds
      * @returns {Object} Updated state and debug info
      */
-    update(state, controls, deltaTime) {
+    update(_state, _controls, _deltaTime) {
         throw new Error('update() must be implemented by subclass');
     }
 
@@ -61,7 +61,7 @@ export class IFlightModel {
      * @param {number} altitude - Altitude in meters
      * @returns {number} Air density in kg/m³
      */
-    calculateAirDensity(altitude) {
+    calculateAirDensity(_altitude) {
         throw new Error('calculateAirDensity() must be implemented by subclass');
     }
 
@@ -70,7 +70,7 @@ export class IFlightModel {
      * @param {Object} params - Calculation parameters
      * @returns {THREE.Vector3} Lift force vector
      */
-    calculateLiftForce(params) {
+    calculateLiftForce(_params) {
         throw new Error('calculateLiftForce() must be implemented by subclass');
     }
 
@@ -79,7 +79,7 @@ export class IFlightModel {
      * @param {Object} params - Calculation parameters
      * @returns {THREE.Vector3} Drag force vector
      */
-    calculateDragForce(params) {
+    calculateDragForce(_params) {
         throw new Error('calculateDragForce() must be implemented by subclass');
     }
 
@@ -89,7 +89,7 @@ export class IFlightModel {
      * @param {THREE.Quaternion} orientation - Aircraft orientation
      * @returns {THREE.Vector3} Thrust force vector
      */
-    calculateThrustForce(throttle, orientation) {
+    calculateThrustForce(_throttle, _orientation) {
         throw new Error('calculateThrustForce() must be implemented by subclass');
     }
 

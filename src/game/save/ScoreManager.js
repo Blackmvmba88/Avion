@@ -3,8 +3,6 @@
  * Manages scoring, points, and leaderboards in the flight simulator.
  */
 
-/* global setTimeout, clearTimeout */
-
 /**
  * Score event types
  */

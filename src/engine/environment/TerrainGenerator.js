@@ -32,7 +32,7 @@ export class TerrainGenerator {
      * @param {number} z - Z coordinate
      * @returns {number} Height at position
      */
-    getHeight(x, z) {
+    getHeight(_x, _z) {
         // TODO: Calculate height from heightmap or noise
         return 0;
     }

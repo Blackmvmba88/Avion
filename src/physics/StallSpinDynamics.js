@@ -307,7 +307,7 @@ export class StallSpinDynamics {
      * @returns {Object} Spin forces and moments
      */
     updateSpinState(state, deltaTime) {
-        const { position, velocity, angularVelocity, orientation, controlInputs = {} } = state;
+        const { position: _position, velocity: _velocity, angularVelocity, orientation: _orientation, controlInputs = {} } = state;
         
         const result = {
             forces: new THREE.Vector3(0, 0, 0),
@@ -356,7 +356,7 @@ export class StallSpinDynamics {
      */
     _updateIncipientSpin(result, state, deltaTime) {
         // Build up to developed spin
-        const buildupRate = 1.0 / 1.5; // Takes 1.5 seconds to develop
+        const _buildupRate = 1.0 / 1.5; // Takes 1.5 seconds to develop
         this._spinRotations += STALL_CONSTANTS.SPIN_ROTATION_RATE * 0.5 * deltaTime / (2 * Math.PI);
         
         if (this._spinRotations > 0.5) { // After half rotation
@@ -443,7 +443,7 @@ export class StallSpinDynamics {
      * @returns {Object} Modified aerodynamic coefficients and forces
      */
     update(state, deltaTime) {
-        const { angleOfAttack, airspeed, loadFactor = 1, angularVelocity, orientation, controlInputs } = state;
+        const { angleOfAttack, airspeed, loadFactor = 1, angularVelocity: _angularVelocity, orientation: _orientation, controlInputs: _controlInputs } = state;
         
         // Update time accumulator for buffet noise
         this._time += deltaTime;

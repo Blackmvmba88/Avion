@@ -37,7 +37,7 @@ export class Environment {
      * Update environment
      * @param {number} deltaTime - Time since last frame
      */
-    update(deltaTime) {
+    update(_deltaTime) {
         // TODO: Update time of day
         // TODO: Update weather
         // TODO: Update water animation
@@ -47,7 +47,7 @@ export class Environment {
      * Set time of day
      * @param {number} hour - Hour of day (0-24)
      */
-    setTimeOfDay(hour) {
+    setTimeOfDay(_hour) {
         // TODO: Update time
     }
     
@@ -55,7 +55,7 @@ export class Environment {
      * Set weather conditions
      * @param {Object} conditions - Weather parameters
      */
-    setWeather(conditions) {
+    setWeather(_conditions) {
         // TODO: Update weather
     }
 }

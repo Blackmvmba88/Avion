@@ -219,7 +219,7 @@ export class AdvancedFlightModel {
         
         // Lift curve slope adjusted for aspect ratio
         const AR = this.aspectRatio;
-        const e = this.oswaldEfficiency;
+        const _e = this.oswaldEfficiency;
         const clAlpha = ADVANCED_CONSTANTS.LIFT_CURVE_SLOPE / (1 + ADVANCED_CONSTANTS.LIFT_CURVE_SLOPE / (Math.PI * AR));
         
         if (Math.abs(aoaDegrees) < criticalAoA) {
@@ -273,7 +273,7 @@ export class AdvancedFlightModel {
         }
         
         // Lift direction is perpendicular to velocity in the plane of symmetry
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation);
+        const _forward = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation);
         const velocityNorm = velocity.clone().normalize();
         
         // Lift is perpendicular to velocity, in the plane containing velocity and aircraft up

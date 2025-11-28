@@ -26,7 +26,7 @@ export class HUD {
      * Update HUD display
      * @param {Object} data - Flight data to display
      */
-    update(data) {
+    update(_data) {
         // TODO: Update airspeed
         // TODO: Update altitude
         // TODO: Update throttle

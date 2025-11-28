@@ -107,7 +107,7 @@ class GearStrut {
             aircraftVelocity,
             groundHeight,
             deltaTime,
-            mass,
+            mass: _mass,
             steeringInput,
             brakeInput
         } = params;
@@ -189,7 +189,7 @@ class GearStrut {
      * Calculate friction forces
      * @private
      */
-    _calculateFriction(velocity, orientation, steeringInput, brakeInput, deltaTime) {
+    _calculateFriction(velocity, orientation, steeringInput, brakeInput, _deltaTime) {
         const result = {
             force: new THREE.Vector3(),
             torque: new THREE.Vector3()
@@ -224,7 +224,7 @@ class GearStrut {
         const wheelRight = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), wheelForward);
         
         // Decompose velocity into longitudinal and lateral components
-        const velocityDir = groundVelocity.clone().normalize();
+        const _velocityDir = groundVelocity.clone().normalize();
         const longitudinalSpeed = groundVelocity.dot(wheelForward);
         const lateralSpeed = groundVelocity.dot(wheelRight);
         

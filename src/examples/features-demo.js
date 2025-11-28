@@ -10,6 +10,7 @@ import { ConnectionManager } from '../utils/ConnectionManager.js';
 import platformDetector from '../utils/PlatformDetector.js';
 import { Optimizer } from '../utils/Optimizer.js';
 import { Validator } from '../utils/Validator.js';
+import versionManager from '../utils/VersionManager.js';
 
 /**
  * Example 1: Initialize Application with All Features
@@ -69,7 +70,7 @@ export function examplePlatformDetection() {
     const platform = platformDetector.platform;
     
     console.log('Device type:', platform.isMobile ? 'Mobile' : 
-                               platform.isTablet ? 'Tablet' : 'Desktop');
+        platform.isTablet ? 'Tablet' : 'Desktop');
     console.log('Operating System:', platformDetector.toString());
     console.log('Has touch support:', platform.hasTouch);
     console.log('Screen size:', `${platform.screenWidth}x${platform.screenHeight}`);
@@ -244,7 +245,6 @@ export function exampleVersionManagement() {
     console.log('Migration would convert from', oldSaveData.__version, 'to 1.0.0');
     
     // Version comparison
-    import versionManager from '../utils/VersionManager.js';
     const comparison = versionManager.compareVersions('1.0.0', '0.5.0');
     console.log('Version comparison (1.0.0 vs 0.5.0):', comparison > 0 ? 'Newer' : 'Older');
 }

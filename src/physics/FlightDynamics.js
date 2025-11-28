@@ -66,7 +66,7 @@ export class FlightDynamics {
 
         // Calculate acceleration based on forces and rotation
         const forwardAngle = this.rotation.yaw;
-        const pitchAngle = this.rotation.pitch;
+        const _pitchAngle = this.rotation.pitch;
 
         // Simplified force application
         this.acceleration.x =
