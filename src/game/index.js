@@ -26,6 +26,8 @@ export {
 
 // UI Components
 export { InstrumentPanel } from './ui/index.js';
+export { SettingsManager, SettingsCategory, DEFAULT_SETTINGS } from './ui/index.js';
+export { SettingsMenu } from './ui/index.js';
 
 // Multiplayer
 export { 
@@ -49,5 +51,8 @@ export {
     ScoreEventType 
 } from './save/index.js';
 export { createDefaultAchievements } from './save/index.js';
+
+// Save/Load
+export { SaveManager, SaveSlot, AutoSaveConfig } from './save/index.js';
 
 export default {};
