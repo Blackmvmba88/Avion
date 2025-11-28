@@ -1,6 +1,20 @@
 import * as THREE from 'three';
 
 /**
+ * Tipos de mapa disponibles para Google Maps
+ */
+const TIPOS_MAPA = ['roadmap', 'satellite', 'terrain', 'hybrid'];
+
+/**
+ * Límites de coordenadas válidas
+ */
+const LIMITES_COORDENADAS = {
+    lat: { min: -90, max: 90 },
+    lng: { min: -180, max: 180 },
+    zoom: { min: 1, max: 21 }
+};
+
+/**
  * Esquema de validación para la configuración del terreno
  */
 const ESQUEMA_TERRENO = {
@@ -9,8 +23,50 @@ const ESQUEMA_TERRENO = {
     mostrarCuadricula: { tipo: 'boolean', requerido: false },
     usarGoogleMaps: { tipo: 'boolean', requerido: false },
     googleMapsApiKey: { tipo: 'string', requerido: false },
-    coordenadas: { tipo: 'object', requerido: false }
+    coordenadas: { tipo: 'object', requerido: false },
+    tipoMapa: { tipo: 'string', requerido: false },
+    tamanoImagen: { tipo: 'number', requerido: false, min: 100, max: 2048 }
 };
+
+/**
+ * Valida las coordenadas de Google Maps
+ * @param {Object} coordenadas - Coordenadas a validar { lat, lng, zoom }
+ * @returns {Object} - { valido: boolean, errores: Array }
+ */
+function validarCoordenadas(coordenadas) {
+    const errores = [];
+    
+    if (!coordenadas || typeof coordenadas !== 'object') {
+        errores.push('Las coordenadas deben ser un objeto');
+        return { valido: false, errores };
+    }
+    
+    // Validar latitud
+    if (typeof coordenadas.lat !== 'number' || isNaN(coordenadas.lat)) {
+        errores.push('La latitud debe ser un número válido');
+    } else if (coordenadas.lat < LIMITES_COORDENADAS.lat.min || coordenadas.lat > LIMITES_COORDENADAS.lat.max) {
+        errores.push(`La latitud debe estar entre ${LIMITES_COORDENADAS.lat.min} y ${LIMITES_COORDENADAS.lat.max}`);
+    }
+    
+    // Validar longitud
+    if (typeof coordenadas.lng !== 'number' || isNaN(coordenadas.lng)) {
+        errores.push('La longitud debe ser un número válido');
+    } else if (coordenadas.lng < LIMITES_COORDENADAS.lng.min || coordenadas.lng > LIMITES_COORDENADAS.lng.max) {
+        errores.push(`La longitud debe estar entre ${LIMITES_COORDENADAS.lng.min} y ${LIMITES_COORDENADAS.lng.max}`);
+    }
+    
+    // Validar zoom
+    if (typeof coordenadas.zoom !== 'number' || isNaN(coordenadas.zoom)) {
+        errores.push('El zoom debe ser un número válido');
+    } else if (coordenadas.zoom < LIMITES_COORDENADAS.zoom.min || coordenadas.zoom > LIMITES_COORDENADAS.zoom.max) {
+        errores.push(`El zoom debe estar entre ${LIMITES_COORDENADAS.zoom.min} y ${LIMITES_COORDENADAS.zoom.max}`);
+    }
+    
+    return {
+        valido: errores.length === 0,
+        errores
+    };
+}
 
 /**
  * Validador de configuración del terreno
@@ -44,6 +100,24 @@ function validarConfiguracion(config) {
         }
     }
     
+    // Validar que si usarGoogleMaps está habilitado, se proporcione la API key
+    if (config.usarGoogleMaps && (!config.googleMapsApiKey || config.googleMapsApiKey.trim() === '')) {
+        errores.push('Se requiere una clave API de Google Maps cuando usarGoogleMaps está habilitado');
+    }
+    
+    // Validar tipo de mapa
+    if (config.tipoMapa && !TIPOS_MAPA.includes(config.tipoMapa)) {
+        errores.push(`Tipo de mapa inválido: ${config.tipoMapa}. Opciones válidas: ${TIPOS_MAPA.join(', ')}`);
+    }
+    
+    // Validar coordenadas si se proporcionan
+    if (config.coordenadas) {
+        const resultadoCoordenadas = validarCoordenadas(config.coordenadas);
+        if (!resultadoCoordenadas.valido) {
+            errores.push(...resultadoCoordenadas.errores);
+        }
+    }
+    
     return {
         valido: errores.length === 0,
         errores
@@ -65,6 +139,8 @@ export class Terrain {
      * @param {boolean} config.usarGoogleMaps - Usar textura de Google Maps (por defecto: false)
      * @param {string} config.googleMapsApiKey - API key de Google Maps (requerido si usarGoogleMaps es true)
      * @param {Object} config.coordenadas - Coordenadas para Google Maps { lat, lng, zoom }
+     * @param {string} config.tipoMapa - Tipo de mapa: 'roadmap', 'satellite', 'terrain', 'hybrid' (por defecto: 'satellite')
+     * @param {number} config.tamanoImagen - Tamaño de la imagen del mapa (100-2048, por defecto: 640)
      */
     constructor(config = {}) {
         this.config = {
@@ -73,7 +149,9 @@ export class Terrain {
             mostrarCuadricula: config.mostrarCuadricula !== false,
             usarGoogleMaps: config.usarGoogleMaps || false,
             googleMapsApiKey: config.googleMapsApiKey || '',
-            coordenadas: config.coordenadas || { lat: 40.4168, lng: -3.7038, zoom: 15 }
+            coordenadas: config.coordenadas || { lat: 40.4168, lng: -3.7038, zoom: 15 },
+            tipoMapa: config.tipoMapa || 'satellite',
+            tamanoImagen: config.tamanoImagen || 640
         };
         
         // Validar configuración
@@ -83,6 +161,7 @@ export class Terrain {
         }
         
         this.texturaGoogleMaps = null;
+        this.meshTerreno = null; // Referencia directa al mesh del terreno
         this.group = this.crearTerreno();
     }
 
@@ -120,6 +199,9 @@ export class Terrain {
         const terreno = new THREE.Mesh(geometriaTerreno, materialTerreno);
         terreno.rotation.x = -Math.PI / 2;
         terreno.receiveShadow = true;
+        
+        // Guardar referencia al mesh del terreno
+        this.meshTerreno = terreno;
         group.add(terreno);
 
         // Cuadrícula de referencia visual (opcional)
@@ -190,8 +272,18 @@ export class Terrain {
      * @returns {string} URL de la imagen del mapa
      */
     construirUrlGoogleMaps(lat, lng, zoom, apiKey) {
-        const tamanoImagen = 640; // Tamaño máximo sin pago
-        const tipoMapa = 'satellite'; // Tipo de mapa: roadmap, satellite, terrain, hybrid
+        // Validar coordenadas antes de construir la URL
+        const resultadoValidacion = validarCoordenadas({ lat, lng, zoom });
+        if (!resultadoValidacion.valido) {
+            console.warn('Coordenadas inválidas:', resultadoValidacion.errores);
+            // Usar valores por defecto si hay error
+            lat = 40.4168;
+            lng = -3.7038;
+            zoom = 15;
+        }
+        
+        const tamanoImagen = this.config.tamanoImagen;
+        const tipoMapa = this.config.tipoMapa;
         
         return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${tamanoImagen}x${tamanoImagen}&maptype=${tipoMapa}&key=${apiKey}`;
     }
@@ -201,11 +293,19 @@ export class Terrain {
      * @param {number} lat - Nueva latitud
      * @param {number} lng - Nueva longitud
      * @param {number} zoom - Nuevo nivel de zoom
+     * @returns {boolean} - true si la actualización fue iniciada, false si hubo error
      */
     actualizarCoordenadasMapa(lat, lng, zoom) {
         if (!this.config.usarGoogleMaps || !this.config.googleMapsApiKey) {
             console.warn('Google Maps no está habilitado o falta la API key');
-            return;
+            return false;
+        }
+        
+        // Validar las nuevas coordenadas
+        const resultadoValidacion = validarCoordenadas({ lat, lng, zoom });
+        if (!resultadoValidacion.valido) {
+            console.warn('Coordenadas inválidas:', resultadoValidacion.errores);
+            return false;
         }
         
         this.config.coordenadas = { lat, lng, zoom };
@@ -226,11 +326,10 @@ export class Terrain {
                 textura.wrapT = THREE.ClampToEdgeWrapping;
                 textura.minFilter = THREE.LinearFilter;
                 
-                // Actualizar material del terreno
-                const terreno = this.group.children.find(child => child.isMesh);
-                if (terreno && terreno.material) {
-                    terreno.material.map = textura;
-                    terreno.material.needsUpdate = true;
+                // Usar referencia directa al mesh del terreno
+                if (this.meshTerreno && this.meshTerreno.material) {
+                    this.meshTerreno.material.map = textura;
+                    this.meshTerreno.material.needsUpdate = true;
                 }
                 
                 this.texturaGoogleMaps = textura;
@@ -241,6 +340,8 @@ export class Terrain {
                 console.error('Error al actualizar coordenadas del mapa:', error);
             }
         );
+        
+        return true;
     }
 
     /**
