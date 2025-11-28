@@ -272,18 +272,33 @@ export class AudioManager {
         const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = noiseBuffer.getChannelData(0);
         
-        // Generate pink noise (more natural sounding)
+        // Pink noise filter coefficients (Paul Kellet's refined method)
+        // These coefficients shape white noise into pink noise (-3dB/octave)
+        const PINK_NOISE_COEFFICIENTS = {
+            b0: { decay: 0.99886, gain: 0.0555179 },
+            b1: { decay: 0.99332, gain: 0.0750759 },
+            b2: { decay: 0.96900, gain: 0.1538520 },
+            b3: { decay: 0.86650, gain: 0.3104856 },
+            b4: { decay: 0.55000, gain: 0.5329522 },
+            b5: { decay: -0.7616, gain: -0.0168980 },
+            b6Gain: 0.115926,
+            whiteGain: 0.5362,
+            outputScale: 0.11
+        };
+        
+        // Generate pink noise using filtered white noise
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        const coef = PINK_NOISE_COEFFICIENTS;
         for (let i = 0; i < bufferSize; i++) {
             const white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-            b6 = white * 0.115926;
+            b0 = coef.b0.decay * b0 + white * coef.b0.gain;
+            b1 = coef.b1.decay * b1 + white * coef.b1.gain;
+            b2 = coef.b2.decay * b2 + white * coef.b2.gain;
+            b3 = coef.b3.decay * b3 + white * coef.b3.gain;
+            b4 = coef.b4.decay * b4 + white * coef.b4.gain;
+            b5 = coef.b5.decay * b5 + white * coef.b5.gain;
+            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * coef.whiteGain) * coef.outputScale;
+            b6 = white * coef.b6Gain;
         }
         
         // Create buffer source

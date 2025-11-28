@@ -119,7 +119,7 @@ export class SettingsManager {
     }
 
     /**
-     * Deep merge two objects
+     * Deep merge two objects (with prototype pollution protection)
      * @param {Object} target
      * @param {Object} source
      * @returns {Object}
@@ -127,7 +127,15 @@ export class SettingsManager {
     deepMerge(target, source) {
         const result = { ...target };
         
+        // Dangerous properties that could lead to prototype pollution
+        const dangerousProps = ['__proto__', 'constructor', 'prototype'];
+        
         for (const key in source) {
+            // Skip dangerous properties and inherited properties
+            if (dangerousProps.includes(key) || !Object.prototype.hasOwnProperty.call(source, key)) {
+                continue;
+            }
+            
             if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
                 result[key] = this.deepMerge(target[key] || {}, source[key]);
             } else {
@@ -210,6 +218,16 @@ export class SettingsManager {
     }
 
     /**
+     * Check if a property name is safe (not a prototype pollution vector)
+     * @param {string} prop - Property name to check
+     * @returns {boolean}
+     */
+    isSafeProperty(prop) {
+        const dangerousProps = ['__proto__', 'constructor', 'prototype'];
+        return !dangerousProps.includes(prop);
+    }
+
+    /**
      * Set a specific setting value
      * @param {string} path - Dot-separated path
      * @param {*} value - New value
@@ -217,17 +235,37 @@ export class SettingsManager {
      */
     set(path, value) {
         const parts = path.split('.');
+        
+        // Guard against prototype pollution - validate all parts upfront
+        const dangerousProps = ['__proto__', 'constructor', 'prototype'];
+        for (const part of parts) {
+            if (dangerousProps.includes(part)) {
+                console.warn('Attempted to set unsafe property path:', path);
+                return false;
+            }
+        }
+        
         let current = this.settings;
         
-        // Navigate to parent
+        // Navigate to parent, creating objects as needed
         for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-                current[parts[i]] = {};
+            const part = parts[i];
+            // Skip if part is somehow dangerous (additional safeguard)
+            if (dangerousProps.includes(part)) {
+                return false;
             }
-            current = current[parts[i]];
+            if (!Object.prototype.hasOwnProperty.call(current, part)) {
+                current[part] = Object.create(null); // Use null prototype object
+            }
+            current = current[part];
         }
         
         const lastPart = parts[parts.length - 1];
+        // Final safeguard check
+        if (dangerousProps.includes(lastPart)) {
+            return false;
+        }
+        
         const oldValue = current[lastPart];
         current[lastPart] = value;
         

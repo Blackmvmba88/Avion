@@ -756,10 +756,28 @@ export class TouchControls {
 
     /**
      * Check if a device supports touch
+     * Includes legacy IE support (msMaxTouchPoints) and coarse pointer detection
      * @returns {boolean}
      */
     static isTouchDevice() {
-        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        // Primary touch detection methods
+        const hasTouch = 'ontouchstart' in window || 
+                        navigator.maxTouchPoints > 0 ||
+                        navigator.msMaxTouchPoints > 0;
+        
+        // Additional check using media query for coarse pointer (touch screens)
+        const hasCoarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches;
+        
+        return hasTouch || hasCoarsePointer;
+    }
+
+    /**
+     * Check if touch is the primary input method (vs hybrid devices)
+     * @returns {boolean}
+     */
+    static isPrimaryTouchDevice() {
+        // Check if the primary pointer is coarse (touch) vs fine (mouse)
+        return window.matchMedia?.('(pointer: coarse)')?.matches ?? false;
     }
 
     /**

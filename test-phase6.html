@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avion - Phase 6 Features Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+        }
+        h1 { color: #4CAF50; }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #45a049; }
+        .status { color: #8BC34A; margin-top: 10px; }
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <h1>🎮 Avion Phase 6 Features Test</h1>
+    
+    <div class="test-section">
+        <h2>🔊 Audio System</h2>
+        <button onclick="testAudio()">Initialize Audio</button>
+        <button onclick="startEngine()">Start Engine</button>
+        <button onclick="stopEngine()">Stop Engine</button>
+        <button onclick="playStallWarning()">Play Stall Warning</button>
+        <div class="status" id="audio-status">Click Initialize Audio first</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>⚙️ Settings Menu</h2>
+        <button onclick="showSettings()">Open Settings</button>
+        <button onclick="getSetting()">Get Audio Volume</button>
+        <div class="status" id="settings-status">Click to test settings</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💾 Save/Load System</h2>
+        <button onclick="testSave()">Save Game</button>
+        <button onclick="listSaves()">List Saves</button>
+        <button onclick="clearSaves()">Clear All</button>
+        <div class="status" id="save-status">Click to test save system</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 Touch Controls</h2>
+        <button onclick="showTouch()">Show Touch Controls</button>
+        <button onclick="hideTouch()">Hide Touch Controls</button>
+        <div class="status" id="touch-status">
+            Touch device: <span id="is-touch">checking...</span>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>✨ Particle System</h2>
+        <p>The ParticleSystem is integrated with Three.js and requires a 3D scene.</p>
+        <p>Features: Engine exhaust, contrails at high altitude, smoke effects</p>
+        <div class="status">See main simulator for particle effects</div>
+    </div>
+
+    <script type="module">
+        import { AudioManager, AudioType } from './src/audio/index.js';
+        import { SettingsMenu, SettingsManager, SaveManager } from './src/game/index.js';
+        import { TouchControls } from './src/mobile/index.js';
+        
+        // Make instances available globally for button handlers
+        window.audioManager = new AudioManager();
+        window.settingsMenu = null;
+        window.saveManager = new SaveManager();
+        window.touchControls = null;
+        
+        // Audio tests
+        window.testAudio = async function() {
+            const success = await window.audioManager.initialize();
+            document.getElementById('audio-status').textContent = 
+                success ? '✅ Audio initialized!' : '❌ Audio initialization failed';
+        };
+        
+        window.startEngine = function() {
+            window.audioManager.startEngineSound();
+            window.audioManager.startWindSound();
+            document.getElementById('audio-status').textContent = '🔊 Engine running...';
+            
+            // Simulate throttle changes
+            let throttle = 0.3;
+            const interval = setInterval(() => {
+                throttle += 0.1;
+                if (throttle > 1) throttle = 0.3;
+                window.audioManager.updateEngineSound(throttle);
+                window.audioManager.updateWindSound(throttle * 150);
+            }, 500);
+            window.engineInterval = interval;
+        };
+        
+        window.stopEngine = function() {
+            window.audioManager.stopEngineSound();
+            window.audioManager.stopWindSound();
+            if (window.engineInterval) clearInterval(window.engineInterval);
+            document.getElementById('audio-status').textContent = '🔇 Engine stopped';
+        };
+        
+        window.playStallWarning = function() {
+            window.audioManager.playEffect(AudioType.STALL_WARNING);
+            document.getElementById('audio-status').textContent = '⚠️ Stall warning played!';
+        };
+        
+        // Settings tests
+        window.showSettings = function() {
+            if (!window.settingsMenu) {
+                window.settingsMenu = new SettingsMenu({
+                    onChange: (path, value) => {
+                        document.getElementById('settings-status').textContent = 
+                            `Changed: ${path} = ${value}`;
+                    }
+                });
+            }
+            window.settingsMenu.show();
+        };
+        
+        window.getSetting = function() {
+            // Use the settings menu's manager if open, otherwise create temp instance
+            if (window.settingsMenu?.settingsManager) {
+                const volume = window.settingsMenu.settingsManager.get('audio.masterVolume');
+                document.getElementById('settings-status').textContent = 
+                    `Master Volume: ${(volume * 100).toFixed(0)}%`;
+            } else {
+                // Create a temporary settings manager to read stored settings
+                import('./src/game/ui/SettingsManager.js').then(module => {
+                    const sm = new module.SettingsManager();
+                    const volume = sm.get('audio.masterVolume');
+                    document.getElementById('settings-status').textContent = 
+                        `Master Volume: ${(volume * 100).toFixed(0)}%`;
+                });
+            }
+        };
+        
+        // Save tests
+        window.testSave = function() {
+            const slot = window.saveManager.save({
+                position: { x: 100, y: 500, z: 200 },
+                throttle: 0.75,
+                timestamp: Date.now()
+            }, 'Test Save ' + new Date().toLocaleTimeString());
+            
+            document.getElementById('save-status').textContent = 
+                slot ? `✅ Saved: ${slot.name}` : '❌ Save failed';
+        };
+        
+        window.listSaves = function() {
+            const saves = window.saveManager.getAllSaves();
+            document.getElementById('save-status').textContent = 
+                `📁 ${saves.length} saves: ${saves.map(s => s.name).join(', ') || 'none'}`;
+        };
+        
+        window.clearSaves = function() {
+            window.saveManager.clearAll();
+            document.getElementById('save-status').textContent = '🗑️ All saves cleared';
+        };
+        
+        // Touch controls
+        window.showTouch = function() {
+            if (!window.touchControls) {
+                window.touchControls = new TouchControls({
+                    onControlChange: (controls) => {
+                        document.getElementById('touch-status').textContent = 
+                            `Pitch: ${controls.pitch.toFixed(2)}, Roll: ${controls.roll.toFixed(2)}, Throttle: ${(controls.throttle * 100).toFixed(0)}%`;
+                    }
+                });
+            }
+            window.touchControls.show();
+            document.getElementById('touch-status').textContent = '📱 Touch controls visible';
+        };
+        
+        window.hideTouch = function() {
+            if (window.touchControls) {
+                window.touchControls.hide();
+            }
+            document.getElementById('touch-status').textContent = '📱 Touch controls hidden';
+        };
+        
+        // Check touch support
+        document.getElementById('is-touch').textContent = 
+            TouchControls.isTouchDevice() ? 'Yes ✅' : 'No (desktop) 💻';
+    </script>
+</body>
+</html>
