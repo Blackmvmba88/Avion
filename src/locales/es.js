@@ -79,6 +79,43 @@ export const es = {
         reconnecting: 'Reconectando...',
         connectionLost: 'Conexión perdida',
         connectionError: 'Error de conexión'
+    },
+    
+    terreno: {
+        titulo: 'Configuración del Terreno',
+        tamano: 'Tamaño',
+        color: 'Color',
+        cuadricula: 'Mostrar Cuadrícula',
+        googleMaps: {
+            titulo: 'Google Maps',
+            habilitar: 'Habilitar Google Maps',
+            apiKey: 'Clave API',
+            latitud: 'Latitud',
+            longitud: 'Longitud',
+            zoom: 'Nivel de Zoom',
+            tipoMapa: 'Tipo de Mapa',
+            satelite: 'Satélite',
+            calles: 'Calles',
+            terreno: 'Terreno',
+            hibrido: 'Híbrido',
+            cargando: 'Cargando mapa...',
+            exito: 'Mapa cargado exitosamente',
+            error: 'Error al cargar el mapa',
+            actualizar: 'Actualizar Coordenadas'
+        },
+        validacion: {
+            campoRequerido: 'Campo requerido faltante',
+            tipoInvalido: 'Tipo de dato inválido',
+            valorMinimo: 'El valor está por debajo del mínimo permitido',
+            valorMaximo: 'El valor excede el máximo permitido',
+            configuracionInvalida: 'Configuración del terreno inválida',
+            apiKeyRequerida: 'Se requiere una clave API de Google Maps'
+        },
+        optimizacion: {
+            titulo: 'Optimización',
+            arbolesRemovidos: 'Árboles removidos para mejor rendimiento',
+            usarObjetos: 'Use el sistema de objetos de ENVIRONMENT_CONFIG para vegetación'
+        }
     }
 };
 

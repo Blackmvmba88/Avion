@@ -103,7 +103,7 @@ export const ENVIRONMENT_CONFIG = {
     // Objects and decorations
     objects: {
         trees: {
-            enabled: true,
+            enabled: false,  // Deshabilitado para optimización del suelo
             count: 500,
             distribution: 'random',  // 'random' or 'clusters'
             minDistance: 10,
