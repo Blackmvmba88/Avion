@@ -1,0 +1,22 @@
+{
+  "name": "avion-godot-server",
+  "version": "1.0.0",
+  "description": "WebSocket relay server for Avion-Godot integration",
+  "main": "ws-server.js",
+  "scripts": {
+    "start": "node ws-server.js",
+    "start:custom": "node ws-server.js"
+  },
+  "keywords": [
+    "avion",
+    "godot",
+    "websocket",
+    "flight-simulator",
+    "integration"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}
