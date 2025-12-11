@@ -6,7 +6,8 @@ This directory contains tools for exporting and integrating Avion flight simulat
 
 ### Files
 
-- **`godot_client.gd`** - GDScript client for Godot Engine to connect to Avion
+- **`godot_client.gd`** - GDScript client for Godot 3.x to connect to Avion
+- **`godot_client_v4.gd`** - GDScript client for Godot 4.x (uses WebSocketPeer)
 - **`ws-server.js`** - WebSocket relay server for Avion-Godot communication
 
 ### Quick Start
@@ -38,7 +39,9 @@ bridge.setDataSources({
 
 #### 3. Set up Godot
 
-1. Copy `godot_client.gd` to your Godot project
+1. Copy the appropriate client to your Godot project:
+   - `godot_client.gd` for Godot 3.x
+   - `godot_client_v4.gd` for Godot 4.x
 2. Add it as a script to a Node in your scene
 3. Connect to Avion:
 

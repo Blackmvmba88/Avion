@@ -258,15 +258,27 @@ export class GodotBridge {
     }
     
     /**
+     * Helper method to extract vector data from object
+     * @param {Object} obj - Object containing vector data
+     * @param {string} propName - Property name
+     * @param {string} methodName - Getter method name
+     * @returns {Object} Vector3 object
+     */
+    extractVector(obj, propName, methodName) {
+        const methodGetter = methodName ? obj[methodName]?.() : null;
+        return obj[propName] || methodGetter || { x: 0, y: 0, z: 0 };
+    }
+    
+    /**
      * Serialize aircraft state for transmission
      * @param {Object} aircraft - Aircraft object
      * @returns {Object} Serialized state
      */
     serializeAircraftState(aircraft) {
         // Handle different aircraft object structures
-        const position = aircraft.position || aircraft.getPosition?.() || { x: 0, y: 0, z: 0 };
-        const velocity = aircraft.velocity || aircraft.getVelocity?.() || { x: 0, y: 0, z: 0 };
-        const rotation = aircraft.rotation || aircraft.getRotation?.() || { x: 0, y: 0, z: 0 };
+        const position = this.extractVector(aircraft, 'position', 'getPosition');
+        const velocity = this.extractVector(aircraft, 'velocity', 'getVelocity');
+        const rotation = this.extractVector(aircraft, 'rotation', 'getRotation');
         
         return {
             position: {

@@ -1,9 +1,8 @@
-# Avion Flight Simulator - Godot Client
+# Avion Flight Simulator - Godot 4.x Client
 # This script provides a WebSocket client to connect to Avion flight simulator
 # 
-# COMPATIBILITY: Written for Godot 3.x
-# For Godot 4.x, replace WebSocketClient with WebSocketPeer
-# and update connection status constants accordingly
+# COMPATIBILITY: Written for Godot 4.x
+# For Godot 3.x, use godot_client.gd instead
 # 
 # Usage:
 # 1. Add this script to a Node in your Godot project
@@ -22,12 +21,12 @@ signal environment_state_updated(state)
 signal event_received(event_type, data)
 
 # Configuration
-export var server_url: String = "ws://localhost:9090"
-export var auto_connect: bool = true
-export var reconnect_attempts: int = 5
+@export var server_url: String = "ws://localhost:9090"
+@export var auto_connect: bool = true
+@export var reconnect_attempts: int = 5
 
 # WebSocket client
-var client: WebSocketClient
+var socket: WebSocketPeer
 var connected: bool = false
 var reconnect_timer: float = 0
 var attempts_left: int = 0
@@ -67,20 +66,31 @@ var latest_physics_state: Dictionary = {}
 var latest_environment_state: Dictionary = {}
 
 func _ready():
-	client = WebSocketClient.new()
-	client.connect("connection_closed", self, "_on_connection_closed")
-	client.connect("connection_error", self, "_on_connection_error")
-	client.connect("connection_established", self, "_on_connection_established")
-	client.connect("data_received", self, "_on_data_received")
-	
+	socket = WebSocketPeer.new()
 	attempts_left = reconnect_attempts
 	
 	if auto_connect:
 		connect_to_avion()
 
 func _process(delta):
-	if client.get_connection_status() != NetworkedMultiplayerPeer.CONNECTION_DISCONNECTED:
-		client.poll()
+	if socket.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		socket.poll()
+		
+		# Check connection state
+		var state = socket.get_ready_state()
+		
+		if state == WebSocketPeer.STATE_OPEN:
+			if not connected:
+				_on_connection_established()
+			
+			# Receive messages
+			while socket.get_available_packet_count() > 0:
+				var packet = socket.get_packet()
+				_on_data_received(packet)
+		
+		elif state == WebSocketPeer.STATE_CLOSED:
+			if connected:
+				_on_connection_closed()
 	
 	# Handle reconnection
 	if not connected and attempts_left > 0 and reconnect_timer > 0:
@@ -92,7 +102,7 @@ func _process(delta):
 # Connect to Avion flight simulator
 func connect_to_avion():
 	print("[AvionClient] Connecting to ", server_url)
-	var error = client.connect_to_url(server_url)
+	var error = socket.connect_to_url(server_url)
 	if error != OK:
 		print("[AvionClient] Failed to connect: ", error)
 		schedule_reconnect()
@@ -100,9 +110,9 @@ func connect_to_avion():
 # Disconnect from Avion
 func disconnect_from_avion():
 	if connected:
-		client.disconnect_from_host()
+		socket.close()
 		connected = false
-		emit_signal("disconnected_from_avion")
+		disconnected_from_avion.emit()
 
 # Send control input to Avion
 # pitch, roll, yaw: -1.0 to 1.0
@@ -113,7 +123,7 @@ func send_control_input(pitch: float, roll: float, yaw: float, throttle: float):
 		"roll": roll,
 		"yaw": yaw,
 		"throttle": throttle,
-		"timestamp": OS.get_ticks_msec()
+		"timestamp": Time.get_ticks_msec()
 	}
 	send_message(MessageType.CONTROL_INPUT, data)
 
@@ -122,7 +132,7 @@ func send_command(command: String, params: Dictionary = {}):
 	var data = {
 		"command": command,
 		"params": params,
-		"timestamp": OS.get_ticks_msec()
+		"timestamp": Time.get_ticks_msec()
 	}
 	send_message(MessageType.COMMAND, data)
 
@@ -139,11 +149,14 @@ func send_message(type: int, data: Dictionary):
 	var message = {
 		"type": message_type_strings[type],
 		"data": data,
-		"timestamp": OS.get_ticks_msec()
+		"timestamp": Time.get_ticks_msec()
 	}
 	
-	var json_string = JSON.print(message)
-	client.get_peer(1).put_packet(json_string.to_utf8())
+	var json_string = JSON.stringify(message)
+	var error = socket.send_text(json_string)
+	
+	if error != OK:
+		print("[AvionClient] Error sending message: ", error)
 
 # Send handshake to Avion
 func send_handshake():
@@ -151,39 +164,35 @@ func send_handshake():
 		"type": "godot",
 		"version": "1.0.0",
 		"engine_version": Engine.get_version_info(),
-		"timestamp": OS.get_ticks_msec()
+		"timestamp": Time.get_ticks_msec()
 	}
 	send_message(MessageType.HANDSHAKE, data)
 
 # WebSocket event handlers
-func _on_connection_established(protocol):
+func _on_connection_established():
 	print("[AvionClient] Connected to Avion!")
 	connected = true
 	attempts_left = reconnect_attempts
-	emit_signal("connected_to_avion")
+	connected_to_avion.emit()
 	send_handshake()
 
-func _on_connection_closed(was_clean):
+func _on_connection_closed():
 	print("[AvionClient] Disconnected from Avion")
 	connected = false
-	emit_signal("disconnected_from_avion")
+	disconnected_from_avion.emit()
 	schedule_reconnect()
 
-func _on_connection_error():
-	print("[AvionClient] Connection error")
-	connected = false
-	schedule_reconnect()
-
-func _on_data_received():
-	var packet = client.get_peer(1).get_packet()
+func _on_data_received(packet: PackedByteArray):
 	var json_string = packet.get_string_from_utf8()
 	
-	var parse_result = JSON.parse(json_string)
-	if parse_result.error != OK:
-		print("[AvionClient] Failed to parse message: ", parse_result.error_string)
+	var json = JSON.new()
+	var error = json.parse(json_string)
+	
+	if error != OK:
+		print("[AvionClient] Failed to parse message: ", json.get_error_message())
 		return
 	
-	var message = parse_result.result
+	var message = json.get_data()
 	handle_message(message)
 
 # Handle incoming message from Avion
@@ -197,18 +206,18 @@ func handle_message(message: Dictionary):
 	match type:
 		"aircraft_update":
 			latest_aircraft_state = data
-			emit_signal("aircraft_state_updated", data)
+			aircraft_state_updated.emit(data)
 		
 		"physics_update":
 			latest_physics_state = data
-			emit_signal("physics_state_updated", data)
+			physics_state_updated.emit(data)
 		
 		"environment_update":
 			latest_environment_state = data
-			emit_signal("environment_state_updated", data)
+			environment_state_updated.emit(data)
 		
 		"event":
-			emit_signal("event_received", data.get("eventType", ""), data.get("data", {}))
+			event_received.emit(data.get("eventType", ""), data.get("data", {}))
 		
 		"handshake":
 			print("[AvionClient] Handshake received: ", data)
