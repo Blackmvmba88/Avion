@@ -54,6 +54,13 @@ src/
   - Connection status monitoring
   - Heartbeat/ping-pong mechanism
 
+- **🎮 Godot Engine Integration**
+  - Real-time WebSocket communication with Godot
+  - Bidirectional data exchange (aircraft state, physics, controls)
+  - GDScript client for easy Godot integration
+  - Support for custom events and commands
+  - Configurable update rates and data filtering
+
 - **🔄 Backward Compatibility**
   - Version management system
   - Automatic data migration
@@ -271,6 +278,45 @@ const throttled = Optimizer.throttle(updateFn, 100);
 // Object pooling
 const pool = Optimizer.createPool(() => new Particle(), 100);
 ```
+
+### Godot Engine Integration
+Seamlessly integrate Avion's flight physics with Godot Engine:
+
+```javascript
+import { GodotBridge } from './integrations/GodotBridge.js';
+
+// Create bridge and connect to Godot
+const godotBridge = new GodotBridge({
+    updateRate: 60,           // Updates per second
+    includePhysics: true,     // Send physics data
+    includeEnvironment: true  // Send environment data
+});
+
+await godotBridge.initialize('ws://localhost:9090');
+
+// Set data sources
+godotBridge.setDataSources({
+    aircraft: yourAircraftObject,
+    physics: yourPhysicsObject,
+    environment: yourEnvironmentObject
+});
+
+// Handle control inputs from Godot
+godotBridge.onControlInput((data) => {
+    aircraft.setPitch(data.pitch);
+    aircraft.setRoll(data.roll);
+    aircraft.setThrottle(data.throttle);
+});
+```
+
+**Features:**
+- Real-time WebSocket communication
+- Bidirectional data exchange (state, physics, controls)
+- GDScript client for Godot projects
+- Configurable update rates
+- Custom event system
+
+See [Godot Integration Guide](docs/integrations/godot-integration.md) for complete documentation.
 
 For detailed documentation, see [NEW_FEATURES.md](docs/NEW_FEATURES.md)
 
