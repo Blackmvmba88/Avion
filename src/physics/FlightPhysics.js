@@ -1,6 +1,6 @@
 /**
  * FlightPhysics.js
- * Core flight physics engine implementing realistic aerodynamic forces.
+ * Core flight physics engine implementing aerodynamic forces.
  * Handles lift, drag, thrust, gravity, air density, and angle of attack calculations.
  */
 
@@ -14,7 +14,7 @@ const CONSTANTS = Object.freeze({
     SEA_LEVEL_DENSITY: 1.225,   // kg/m³ - Air density at sea level
     SCALE_HEIGHT: 8500,         // m - Atmospheric scale height
     MAX_ANGLE_OF_ATTACK: 25,    // degrees - Maximum effective angle of attack
-    LIFT_CURVE_SLOPE: 5.7       // Lift curve slope (approximately 2π ≈ 6.28, using 5.7 for realistic wing)
+    LIFT_CURVE_SLOPE: 5.7       // CL/rad for a representative finite wing
 });
 
 /**
@@ -23,219 +23,178 @@ const CONSTANTS = Object.freeze({
  */
 export class FlightPhysics {
     /**
-     * Create a new FlightPhysics instance
+     * Create a new FlightPhysics instance.
+     *
      * @param {Object} config - Physics configuration
      * @param {number} config.mass - Aircraft mass in kg
      * @param {number} config.wingArea - Wing surface area in m²
-     * @param {number} config.maxThrust - Maximum thrust force in N
-     * @param {number} config.dragCoefficient - Base drag coefficient
-     * @param {number} config.liftCoefficient - Base lift coefficient
+     * @param {number} config.wingSpan - Wing span in m
+     * @param {number} config.aspectRatio - Wing aspect ratio. Derived from span/area when omitted.
+     * @param {number} config.oswaldEfficiency - Oswald span efficiency factor
+     * @param {number} config.maxThrust - Maximum sea-level thrust force in N
+     * @param {number} config.thrustAltitudeExponent - Density-ratio exponent for thrust lapse
+     * @param {number} config.dragCoefficient - Zero-lift/parasitic drag coefficient
+     * @param {number} config.liftCoefficient - Lift scale used by the simplified lift curve
      */
     constructor(config = {}) {
-        this.mass = config.mass || 1000;           // kg
-        this.wingArea = config.wingArea || 16;     // m²
-        this.maxThrust = config.maxThrust || 20000; // N
-        this.baseDragCoefficient = config.dragCoefficient || 0.02;
-        this.baseLiftCoefficient = config.liftCoefficient || 1.0;
-        
+        this.mass = config.mass ?? 1000;
+        this.wingArea = config.wingArea ?? 16;
+        this.wingSpan = config.wingSpan ?? 10;
+        this.aspectRatio = config.aspectRatio ?? ((this.wingSpan * this.wingSpan) / this.wingArea);
+        this.oswaldEfficiency = config.oswaldEfficiency ?? 0.8;
+        this.maxThrust = config.maxThrust ?? 20000;
+        this.thrustAltitudeExponent = config.thrustAltitudeExponent ?? 0.7;
+        this.baseDragCoefficient = config.dragCoefficient ?? 0.02;
+        this.baseLiftCoefficient = config.liftCoefficient ?? 1.0;
+
+        // Defensive bounds keep malformed aircraft profiles from destabilizing the solver.
+        this.mass = Math.max(1, this.mass);
+        this.wingArea = Math.max(0.01, this.wingArea);
+        this.aspectRatio = Math.max(0.1, this.aspectRatio);
+        this.oswaldEfficiency = THREE.MathUtils.clamp(this.oswaldEfficiency, 0.1, 1.0);
+        this.maxThrust = Math.max(0, this.maxThrust);
+        this.thrustAltitudeExponent = Math.max(0, this.thrustAltitudeExponent);
+
         // State vectors
         this.velocity = new THREE.Vector3(0, 0, 0);
         this.acceleration = new THREE.Vector3(0, 0, 0);
         this.angularVelocity = new THREE.Vector3(0, 0, 0);
-        
+
         // Force accumulators
         this.forces = new THREE.Vector3(0, 0, 0);
         this.torques = new THREE.Vector3(0, 0, 0);
     }
 
     /**
-     * Calculate air density at a given altitude using barometric formula
+     * Calculate air density at a given altitude using an exponential atmosphere model.
      * @param {number} altitude - Altitude in meters
      * @returns {number} Air density in kg/m³
      */
     calculateAirDensity(altitude) {
-        // Exponential atmosphere model
-        return CONSTANTS.SEA_LEVEL_DENSITY * Math.exp(-altitude / CONSTANTS.SCALE_HEIGHT);
+        return CONSTANTS.SEA_LEVEL_DENSITY * Math.exp(-Math.max(0, altitude) / CONSTANTS.SCALE_HEIGHT);
     }
 
     /**
      * Calculate dynamic pressure (q = 0.5 * ρ * V²)
-     * @param {number} airDensity - Air density in kg/m³
-     * @param {number} airspeed - Airspeed in m/s
-     * @returns {number} Dynamic pressure in Pa
      */
     calculateDynamicPressure(airDensity, airspeed) {
-        return 0.5 * airDensity * airspeed * airspeed;
+        return 0.5 * Math.max(0, airDensity) * airspeed * airspeed;
     }
 
     /**
-     * Calculate angle of attack based on velocity and aircraft orientation
-     * @param {THREE.Vector3} velocity - Velocity vector
-     * @param {THREE.Quaternion} orientation - Aircraft orientation quaternion
-     * @returns {number} Angle of attack in radians
+     * Calculate angle of attack based on velocity and aircraft orientation.
      */
     calculateAngleOfAttack(velocity, orientation) {
         if (velocity.length() < 0.1) return 0;
-        
-        // Get aircraft forward and up vectors
+
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation);
         const up = new THREE.Vector3(0, 1, 0).applyQuaternion(orientation);
-        
-        // Normalize velocity
         const velocityNorm = velocity.clone().normalize();
-        
-        // Calculate angle between forward vector and velocity
+
         const dot = forward.dot(velocityNorm);
         const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
-        
-        // Determine sign based on up vector
         const cross = new THREE.Vector3().crossVectors(forward, velocityNorm);
         const sign = cross.dot(up) > 0 ? 1 : -1;
-        
+
         return angle * sign;
     }
 
     /**
-     * Calculate lift coefficient based on angle of attack
-     * Uses simplified lift curve with stall modeling
-     * @param {number} angleOfAttack - Angle of attack in radians
-     * @returns {number} Lift coefficient
+     * Calculate lift coefficient based on angle of attack.
+     * Uses a simplified lift curve with post-stall decay.
      */
     calculateLiftCoefficient(angleOfAttack) {
         const aoaDegrees = THREE.MathUtils.radToDeg(angleOfAttack);
         const stallAngle = CONSTANTS.MAX_ANGLE_OF_ATTACK;
-        
-        // Linear lift increase until stall angle
+
         if (Math.abs(aoaDegrees) < stallAngle) {
-            // Lift curve slope (CL per radian) - typically around 5.7 for finite wings
             return this.baseLiftCoefficient * angleOfAttack * CONSTANTS.LIFT_CURVE_SLOPE;
-        } else {
-            // Post-stall behavior - lift drops off
-            const stallFactor = Math.exp(-(Math.abs(aoaDegrees) - stallAngle) / 10);
-            return Math.sign(angleOfAttack) * this.baseLiftCoefficient * 0.5 * stallFactor;
         }
+
+        const stallFactor = Math.exp(-(Math.abs(aoaDegrees) - stallAngle) / 10);
+        return Math.sign(angleOfAttack) * this.baseLiftCoefficient * 0.5 * stallFactor;
     }
 
     /**
-     * Calculate drag coefficient using drag polar equation
-     * @param {number} liftCoefficient - Current lift coefficient
-     * @returns {number} Total drag coefficient
+     * Calculate drag coefficient using the finite-wing drag polar:
+     * CD = CD0 + CL² / (π * AR * e)
      */
     calculateDragCoefficient(liftCoefficient) {
-        // Drag polar: CD = CD0 + CL²/(π * AR * e)
-        // Simplified with aspect ratio AR = 8 and efficiency e = 0.8
-        const inducedDragFactor = 0.05;
+        const inducedDragFactor = 1 / (Math.PI * this.aspectRatio * this.oswaldEfficiency);
         return this.baseDragCoefficient + inducedDragFactor * liftCoefficient * liftCoefficient;
     }
 
-    /**
-     * Calculate lift force
-     * @param {number} dynamicPressure - Dynamic pressure in Pa
-     * @param {number} liftCoefficient - Lift coefficient
-     * @param {THREE.Quaternion} orientation - Aircraft orientation
-     * @returns {THREE.Vector3} Lift force vector in N
-     */
+    /** Calculate lift force. */
     calculateLiftForce(dynamicPressure, liftCoefficient, orientation) {
-        // Lift acts perpendicular to velocity in the plane of the wing
         const liftMagnitude = dynamicPressure * this.wingArea * liftCoefficient;
-        
-        // Lift direction is aircraft's up vector
         const liftDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(orientation);
-        
         return liftDirection.multiplyScalar(liftMagnitude);
     }
 
-    /**
-     * Calculate drag force
-     * @param {number} dynamicPressure - Dynamic pressure in Pa
-     * @param {number} dragCoefficient - Drag coefficient
-     * @param {THREE.Vector3} velocity - Velocity vector
-     * @returns {THREE.Vector3} Drag force vector in N
-     */
+    /** Calculate drag force. */
     calculateDragForce(dynamicPressure, dragCoefficient, velocity) {
         if (velocity.length() < 0.01) return new THREE.Vector3(0, 0, 0);
-        
-        // Drag acts opposite to velocity direction
+
         const dragMagnitude = dynamicPressure * this.wingArea * dragCoefficient;
         const dragDirection = velocity.clone().normalize().negate();
-        
         return dragDirection.multiplyScalar(dragMagnitude);
     }
 
     /**
-     * Calculate thrust force
-     * @param {number} throttle - Throttle setting (0-1)
-     * @param {THREE.Quaternion} orientation - Aircraft orientation
-     * @returns {THREE.Vector3} Thrust force vector in N
+     * Return the available-thrust multiplier for the current air density.
+     * This is intentionally a simple jet-like lapse model; propulsion-specific
+     * engine maps can replace it later without changing the force API.
      */
-    calculateThrustForce(throttle, orientation) {
-        // Thrust acts along aircraft's forward axis
-        const thrustMagnitude = this.maxThrust * Math.max(0, Math.min(1, throttle));
+    calculateThrustFactor(airDensity = CONSTANTS.SEA_LEVEL_DENSITY) {
+        const densityRatio = THREE.MathUtils.clamp(
+            Math.max(0, airDensity) / CONSTANTS.SEA_LEVEL_DENSITY,
+            0,
+            1
+        );
+        return Math.pow(densityRatio, this.thrustAltitudeExponent);
+    }
+
+    /** Calculate thrust force. */
+    calculateThrustForce(throttle, orientation, airDensity = CONSTANTS.SEA_LEVEL_DENSITY) {
+        const commandedThrottle = THREE.MathUtils.clamp(throttle ?? 0, 0, 1);
+        const thrustMagnitude = this.maxThrust * commandedThrottle * this.calculateThrustFactor(airDensity);
         const thrustDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation);
-        
         return thrustDirection.multiplyScalar(thrustMagnitude);
     }
 
-    /**
-     * Calculate gravity force
-     * @returns {THREE.Vector3} Gravity force vector in N
-     */
+    /** Calculate gravity force. */
     calculateGravityForce() {
         return new THREE.Vector3(0, -CONSTANTS.GRAVITY * this.mass, 0);
     }
 
     /**
-     * Update physics simulation for one frame
-     * @param {Object} state - Current aircraft state
-     * @param {THREE.Vector3} state.position - Aircraft position
-     * @param {THREE.Quaternion} state.orientation - Aircraft orientation quaternion
-     * @param {number} state.throttle - Throttle setting (0-1)
-     * @param {number} deltaTime - Time step in seconds
-     * @returns {Object} Updated velocity and forces for debugging
+     * Update physics simulation for one frame.
      */
     update(state, deltaTime) {
         const { position, orientation, throttle } = state;
-        
-        // Calculate altitude for air density
         const altitude = Math.max(0, position.y);
         const airDensity = this.calculateAirDensity(altitude);
-        
-        // Calculate airspeed
         const airspeed = this.velocity.length();
-        
-        // Calculate angle of attack
         const angleOfAttack = this.calculateAngleOfAttack(this.velocity, orientation);
-        
-        // Calculate coefficients
         const liftCoefficient = this.calculateLiftCoefficient(angleOfAttack);
         const dragCoefficient = this.calculateDragCoefficient(liftCoefficient);
-        
-        // Calculate dynamic pressure
         const dynamicPressure = this.calculateDynamicPressure(airDensity, airspeed);
-        
-        // Calculate all forces
+
         const lift = this.calculateLiftForce(dynamicPressure, liftCoefficient, orientation);
         const drag = this.calculateDragForce(dynamicPressure, dragCoefficient, this.velocity);
-        const thrust = this.calculateThrustForce(throttle, orientation);
+        const thrust = this.calculateThrustForce(throttle, orientation, airDensity);
         const gravity = this.calculateGravityForce();
-        
-        // Sum all forces
+
         this.forces.set(0, 0, 0);
         this.forces.add(lift);
         this.forces.add(drag);
         this.forces.add(thrust);
         this.forces.add(gravity);
-        
-        // Calculate acceleration (F = ma)
+
         this.acceleration.copy(this.forces).divideScalar(this.mass);
-        
-        // Update velocity using semi-implicit Euler integration
         this.velocity.add(this.acceleration.clone().multiplyScalar(deltaTime));
-        
-        // Apply air resistance damping to angular velocity
         this.angularVelocity.multiplyScalar(0.98);
-        
-        // Return debug info
+
         return {
             velocity: this.velocity.clone(),
             acceleration: this.acceleration.clone(),
@@ -250,6 +209,9 @@ export class FlightPhysics {
                 lift: liftCoefficient,
                 drag: dragCoefficient
             },
+            performance: {
+                thrustFactor: this.calculateThrustFactor(airDensity)
+            },
             airspeed,
             angleOfAttack: THREE.MathUtils.radToDeg(angleOfAttack),
             airDensity,
@@ -257,58 +219,34 @@ export class FlightPhysics {
         };
     }
 
-    /**
-     * Apply control inputs to angular velocity
-     * @param {Object} controls - Control inputs
-     * @param {number} controls.pitch - Pitch input (-1 to 1)
-     * @param {number} controls.roll - Roll input (-1 to 1)
-     * @param {number} controls.yaw - Yaw input (-1 to 1)
-     * @param {number} deltaTime - Time step in seconds
-     */
+    /** Apply simplified control inputs to angular velocity. */
     applyControlInputs(controls, deltaTime) {
-        const pitchRate = 1.5;  // rad/s
-        const rollRate = 2.0;   // rad/s
-        const yawRate = 0.8;    // rad/s
-        
-        // Apply control moments (simplified model)
+        const pitchRate = 1.5;
+        const rollRate = 2.0;
+        const yawRate = 0.8;
+
         this.angularVelocity.x += controls.pitch * pitchRate * deltaTime;
         this.angularVelocity.z += controls.roll * rollRate * deltaTime;
         this.angularVelocity.y += controls.yaw * yawRate * deltaTime;
-        
-        // Clamp angular velocities
+
         const maxAngularVelocity = 3.0;
         this.angularVelocity.x = THREE.MathUtils.clamp(this.angularVelocity.x, -maxAngularVelocity, maxAngularVelocity);
         this.angularVelocity.y = THREE.MathUtils.clamp(this.angularVelocity.y, -maxAngularVelocity, maxAngularVelocity);
         this.angularVelocity.z = THREE.MathUtils.clamp(this.angularVelocity.z, -maxAngularVelocity, maxAngularVelocity);
     }
 
-    /**
-     * Get the current velocity vector
-     * @returns {THREE.Vector3} Current velocity
-     */
     getVelocity() {
         return this.velocity.clone();
     }
 
-    /**
-     * Set the velocity vector
-     * @param {THREE.Vector3} velocity - New velocity
-     */
     setVelocity(velocity) {
         this.velocity.copy(velocity);
     }
 
-    /**
-     * Get angular velocity
-     * @returns {THREE.Vector3} Current angular velocity
-     */
     getAngularVelocity() {
         return this.angularVelocity.clone();
     }
 
-    /**
-     * Reset physics state
-     */
     reset() {
         this.velocity.set(0, 0, 0);
         this.acceleration.set(0, 0, 0);
